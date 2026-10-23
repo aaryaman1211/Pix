@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, TextInput, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { PlaceRow } from '@/components/place-row';
 import { ThemedText } from '@/components/themed-text';
-import { Button, Empty, ErrorText, Input, Loading } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
+import { Button, Empty, ErrorText, Loading } from '@/components/ui';
+import { Font, Palette, Radius, Spacing } from '@/constants/theme';
 import { distanceLabel } from '@/lib/format';
 import { invoke } from '@/lib/functions';
 import { distanceMeters } from '@/lib/geo';
@@ -18,7 +19,7 @@ import { must, useQuery } from '@/lib/use-query';
 
 export default function SearchScreen() {
   const group = useActiveGroup();
-  const { coords, error: locationError } = useLocation();
+  const { coords, error: locationError, refresh: refreshLocation, pref } = useLocation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<PlaceResult[] | null>(null);
   const [searching, setSearching] = useState(false);
@@ -65,22 +66,29 @@ export default function SearchScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.screen}>
       <View style={styles.searchBar}>
-        <View style={{ flex: 1 }}>
-          <Input
-            placeholder="Restaurant, café, anything…"
-            value={query}
-            onChangeText={setQuery}
-            onSubmitEditing={search}
-            returnKeyType="search"
-            autoFocus
-            autoCorrect={false}
-          />
-        </View>
-        <Button title="Search" small onPress={search} disabled={!coords || !query.trim()} style={{ minHeight: 48 }} />
+        <Icon name="search" size={18} color={Palette.muted} />
+        <TextInput
+          placeholder="Restaurant, café, anything…"
+          placeholderTextColor={Palette.muted}
+          value={query}
+          onChangeText={setQuery}
+          onSubmitEditing={search}
+          returnKeyType="search"
+          autoFocus
+          autoCorrect={false}
+          style={styles.searchInput}
+        />
+        <Button title="Search" small onPress={search} disabled={!coords || !query.trim()} />
       </View>
-      <ErrorText>{locationError}</ErrorText>
+
+      {locationError && (
+        <View style={styles.locationError}>
+          <ErrorText>{locationError}</ErrorText>
+          <Button title="Try again" small variant="secondary" onPress={refreshLocation} />
+        </View>
+      )}
 
       <FlatList
         data={results ?? []}
@@ -92,10 +100,10 @@ export default function SearchScreen() {
           searching ? (
             <Loading />
           ) : results ? (
-            <Empty title="No matches" body="Try a different name or a broader search." />
+            <Empty color={Palette.sky} title="No matches" body="Try a different name or a broader search." />
           ) : (
-            <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
-              Searching within {group.search_radius_m / 1000} km of you
+            <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', marginTop: Spacing.three }}>
+              Searching within {group.search_radius_m / 1000} km of {pref?.mode === 'custom' ? pref.label : 'you'}
             </ThemedText>
           )
         }
@@ -107,10 +115,12 @@ export default function SearchScreen() {
               type={item.primaryType}
               priceLevel={item.priceLevel}
               rating={item.rating}
-              subtitle={[coords && distanceLabel(distanceMeters(coords, item)), item.address].filter(Boolean).join(' · ')}
+              distance={coords ? distanceLabel(distanceMeters(coords, item)) : null}
+              subtitle={item.address}
               right={
                 <Button
                   title={isSaved ? 'Saved' : 'Add'}
+                  icon={isSaved ? 'check' : 'plus'}
                   small
                   variant={isSaved ? 'secondary' : 'primary'}
                   disabled={isSaved}
@@ -127,6 +137,21 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  searchBar: { flexDirection: 'row', gap: Spacing.two, padding: Spacing.three, alignItems: 'center' },
+  screen: { flex: 1, backgroundColor: Palette.canvas },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    margin: Spacing.three,
+    paddingLeft: Spacing.three,
+    paddingRight: 6,
+    height: 56,
+    backgroundColor: Palette.white,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Palette.line,
+  },
+  searchInput: { flex: 1, fontSize: 16, fontFamily: Font.medium, color: Palette.ink, height: '100%' },
+  locationError: { paddingHorizontal: Spacing.four, paddingBottom: Spacing.three, gap: Spacing.two, alignItems: 'flex-start' },
   list: { paddingHorizontal: Spacing.three, gap: Spacing.two, paddingBottom: Spacing.six },
 });

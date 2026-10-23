@@ -1,23 +1,26 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, ErrorText, Loading, Stars } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
+import { Avatar, Button, Card, Chip, ErrorText, IconCircle, Loading, Stars } from '@/components/ui';
+import { Palette, pastelAt, pastelFor, Radius, Spacing } from '@/constants/theme';
 import { useUserId } from '@/lib/auth';
 import { dayLabel, prettyType, priceLabel } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
 import { logInteraction } from '@/lib/interactions';
+import { useMembers } from '@/lib/members';
 import { mapsUrl } from '@/lib/places';
 import { supabase } from '@/lib/supabase';
 import type { Memory, Rating, SavedPlace } from '@/lib/types';
 import { must, useQuery } from '@/lib/use-query';
 
 export default function PlaceScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, color: colorParam } = useLocalSearchParams<{ id: string; color?: string }>();
   const group = useActiveGroup();
   const userId = useUserId();
+  const members = useMembers(group.id);
   const [error, setError] = useState<string | null>(null);
 
   const query = useQuery(async () => {
@@ -47,9 +50,12 @@ export default function PlaceScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [placeId]);
 
-  if (!query.data || !place) return query.error ? <ErrorText>{query.error}</ErrorText> : <Loading />;
+  if (!query.data || !place) {
+    return <View style={styles.screen}>{query.error ? <ErrorText>{query.error}</ErrorText> : <Loading />}</View>;
+  }
   const { ratings, memories } = query.data;
   const myRating = ratings.find((r) => r.user_id === userId)?.score ?? 0;
+  const color = colorParam ?? pastelFor(place.place_id);
 
   async function rate(score: number) {
     const { error } = await supabase
@@ -86,66 +92,88 @@ export default function PlaceScreen() {
     ]);
   }
 
-  const meta = [prettyType(place.primary_type), priceLabel(place.price_level)].filter(Boolean).join(' · ');
+  const chips = [prettyType(place.primary_type), priceLabel(place.price_level), place.status === 'visited' ? 'Been' : 'Want to go'].filter(Boolean);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Stack.Screen options={{ title: '' }} />
-      <View style={{ gap: Spacing.one }}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+      <View style={[styles.hero, { backgroundColor: color }]}>
+        <View style={[styles.heroCircle, { backgroundColor: color === Palette.yellow ? Palette.salmon : Palette.yellow }]} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }}>
+          {chips.map((c) => (
+            <Chip key={c} label={c} />
+          ))}
+        </View>
         <ThemedText style={styles.title}>{place.name}</ThemedText>
-        <ThemedText themeColor="textSecondary">{meta}</ThemedText>
-        {place.address && (
-          <ThemedText type="small" themeColor="textSecondary">
-            {place.address}
-          </ThemedText>
-        )}
+        {place.address && <ThemedText style={{ color: Palette.inkSoft }}>{place.address}</ThemedText>}
       </View>
 
       <View style={styles.actions}>
         <Button
           title={place.status === 'want' ? 'We went! Add a memory' : 'Add a memory'}
+          icon="photo"
           onPress={() => router.push({ pathname: '/memory/new', params: { savedPlaceId: place.id } })}
           style={{ flex: 1 }}
         />
-        <Button title="Map" variant="secondary" onPress={() => Linking.openURL(mapsUrl(place.name, place.place_id))} />
+        <IconCircle
+          icon="map"
+          label="Open in Maps"
+          size={54}
+          color={Palette.white}
+          onPress={() => Linking.openURL(mapsUrl(place.name, place.place_id))}
+        />
       </View>
       {place.status === 'want' && (
         <Button title="Mark as been, no memory" variant="secondary" small onPress={markVisited} />
       )}
 
       <Card>
-        <ThemedText type="smallBold" themeColor="textSecondary">
+        <ThemedText type="label" themeColor="textSecondary">
           Your rating
         </ThemedText>
-        <Stars value={myRating} onChange={rate} />
+        <View style={{ marginTop: Spacing.two }}>
+          <Stars value={myRating} onChange={rate} />
+        </View>
         {ratings
           .filter((r) => r.user_id !== userId)
-          .map((r) => (
-            <View key={r.user_id} style={styles.otherRating}>
-              <ThemedText type="small">{r.profiles?.display_name || 'Someone'}</ThemedText>
-              <Stars value={r.score} size={16} />
-            </View>
-          ))}
+          .map((r) => {
+            const m = members.find((x) => x.id === r.user_id);
+            return (
+              <View key={r.user_id} style={styles.otherRating}>
+                {m && <Avatar member={m} size={28} ring={Palette.white} />}
+                <ThemedText type="small" style={{ flex: 1 }}>
+                  {r.profiles?.display_name || 'Someone'}
+                </ThemedText>
+                <Stars value={r.score} size={14} />
+              </View>
+            );
+          })}
       </Card>
 
       {memories.length > 0 && (
         <View style={{ gap: Spacing.two }}>
-          <ThemedText type="smallBold" themeColor="textSecondary">
+          <ThemedText type="label" themeColor="textSecondary">
             Memories here
           </ThemedText>
-          {memories.map((m) => (
-            <Card key={m.id} onPress={() => router.push({ pathname: '/memory/[id]', params: { id: m.id } })}>
-              <ThemedText style={{ fontWeight: '600' }}>{m.title}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {dayLabel(m.happened_on)}
-              </ThemedText>
+          {memories.map((m, i) => (
+            <Card
+              key={m.id}
+              color={pastelAt(i + 2)}
+              onPress={() => router.push({ pathname: '/memory/[id]', params: { id: m.id } })}
+              style={styles.memory}>
+              <View style={{ flex: 1 }}>
+                <ThemedText style={{ fontSize: 18, fontWeight: '700' }}>{m.title}</ThemedText>
+                <ThemedText type="small" style={{ color: Palette.inkSoft }}>
+                  {dayLabel(m.happened_on)}
+                </ThemedText>
+              </View>
+              <Icon name="chevronRight" size={16} />
             </Card>
           ))}
         </View>
       )}
 
       <ErrorText>{error}</ErrorText>
-      <Button title="Remove from list" variant="danger" small onPress={remove} />
+      <Button title="Remove from list" icon="trash" variant="danger" small onPress={remove} />
     </ScrollView>
   );
 }
@@ -155,8 +183,18 @@ function toFeatures(p: SavedPlace) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '700' },
-  actions: { flexDirection: 'row', gap: Spacing.two },
-  otherRating: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  screen: { flex: 1, backgroundColor: Palette.canvas },
+  container: { padding: Spacing.four, paddingTop: Spacing.two, gap: Spacing.three, paddingBottom: Spacing.six },
+  hero: {
+    borderRadius: Radius.card,
+    padding: Spacing.four,
+    paddingTop: 120,
+    gap: Spacing.two,
+    overflow: 'hidden',
+  },
+  heroCircle: { position: 'absolute', width: 180, height: 180, borderRadius: 90, top: -60, right: -40 },
+  title: { fontSize: 36, lineHeight: 40, fontWeight: '800', letterSpacing: -1 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  otherRating: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginTop: Spacing.two },
+  memory: { flexDirection: 'row', alignItems: 'center' },
 });

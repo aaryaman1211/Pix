@@ -1,31 +1,18 @@
-import { NativeTabs } from 'expo-router/native-tabs';
+import { Tabs } from 'expo-router/js-tabs';
 
-import { useTheme } from '@/hooks/use-theme';
+import { PixTabBar } from '@/components/tab-bar';
+import { Palette } from '@/constants/theme';
 
 export default function TabsLayout() {
-  const theme = useTheme();
   return (
-    <NativeTabs
-      backgroundColor={theme.background}
-      indicatorColor={theme.backgroundSelected}
-      tintColor={theme.accent}
-      labelStyle={{ selected: { color: theme.accent } }}>
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Places</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'heart', selected: 'heart.fill' }} md="favorite" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="discover">
-        <NativeTabs.Trigger.Label>Discover</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'sparkles', selected: 'sparkles' }} md="explore" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="memories">
-        <NativeTabs.Trigger.Label>Memories</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'photo.on.rectangle', selected: 'photo.fill.on.rectangle.fill' }} md="photo_library" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="dates">
-        <NativeTabs.Trigger.Label>Dates</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'calendar', selected: 'calendar' }} md="event" />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs
+      tabBar={(props) => <PixTabBar {...props} />}
+      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: Palette.canvas } }}>
+      <Tabs.Screen name="index" options={{ title: 'Places' }} />
+      <Tabs.Screen name="discover" options={{ title: 'Discover' }} />
+      <Tabs.Screen name="memories" options={{ title: 'Memories' }} />
+      <Tabs.Screen name="dates" options={{ title: 'Dates' }} />
+      <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
+    </Tabs>
   );
 }

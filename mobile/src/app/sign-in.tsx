@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { HeroBlob } from '@/components/hero-blob';
 import { ThemedText } from '@/components/themed-text';
 import { Button, ErrorText, Input, Segmented } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
+import { Palette, Radius, Spacing } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 
 type Mode = 'sign-in' | 'sign-up';
 
 export default function SignInScreen() {
+  const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>('sign-in');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -49,64 +51,70 @@ export default function SignInScreen() {
   const canSubmit = email.includes('@') && password.length >= 6 && (mode === 'sign-in' || name.trim());
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <View style={styles.hero}>
-            <ThemedText style={styles.logo}>Pix</ThemedText>
-            <ThemedText themeColor="textSecondary" style={{ textAlign: 'center' }}>
-              Places you want to go, and the memories you make there.
-            </ThemedText>
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        contentContainerStyle={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + Spacing.four }]}
+        keyboardShouldPersistTaps="handled">
+        <HeroBlob />
+        <View style={{ gap: Spacing.two, marginBottom: Spacing.three }}>
+          <ThemedText style={styles.logo}>Pix</ThemedText>
+          <ThemedText style={styles.tagline}>Places you want to go, and the memories you make there.</ThemedText>
+        </View>
+
+        <Segmented
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'sign-in', label: 'Sign in' },
+            { value: 'sign-up', label: 'Create account' },
+          ]}
+        />
+
+        {mode === 'sign-up' && (
+          <Input label="Your name" value={name} onChangeText={setName} autoComplete="name" textContentType="name" />
+        )}
+        <Input
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
+          textContentType="emailAddress"
+        />
+        <Input
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
+          textContentType={mode === 'sign-in' ? 'password' : 'newPassword'}
+          onSubmitEditing={() => canSubmit && submit()}
+        />
+
+        <ErrorText>{error}</ErrorText>
+        {notice && (
+          <View style={styles.notice}>
+            <ThemedText type="smallBold">{notice}</ThemedText>
           </View>
+        )}
 
-          <Segmented
-            value={mode}
-            onChange={setMode}
-            options={[
-              { value: 'sign-in', label: 'Sign in' },
-              { value: 'sign-up', label: 'Create account' },
-            ]}
-          />
-
-          {mode === 'sign-up' && (
-            <Input label="Your name" value={name} onChangeText={setName} autoComplete="name" textContentType="name" />
-          )}
-          <Input
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            textContentType="emailAddress"
-          />
-          <Input
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
-            textContentType={mode === 'sign-in' ? 'password' : 'newPassword'}
-            onSubmitEditing={() => canSubmit && submit()}
-          />
-
-          <ErrorText>{error}</ErrorText>
-          {notice && <ThemedText type="small">{notice}</ThemedText>}
-
-          <Button
-            title={mode === 'sign-in' ? 'Sign in' : 'Create account'}
-            onPress={submit}
-            loading={busy}
-            disabled={!canSubmit}
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        <Button
+          title={mode === 'sign-in' ? 'Sign in' : 'Create account'}
+          onPress={submit}
+          loading={busy}
+          disabled={!canSubmit}
+          style={{ marginTop: Spacing.two }}
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: 'center', padding: Spacing.four, gap: Spacing.three },
-  hero: { alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.four },
-  logo: { fontSize: 56, lineHeight: 64, fontWeight: '800' },
+  screen: { flex: 1, backgroundColor: Palette.canvas },
+  container: { flexGrow: 1, paddingHorizontal: Spacing.four, gap: Spacing.three },
+  logo: { fontSize: 72, lineHeight: 76, fontWeight: '800', letterSpacing: -3 },
+  tagline: { fontSize: 20, lineHeight: 26, fontWeight: '600', color: Palette.inkSoft, maxWidth: 300 },
+  notice: { backgroundColor: Palette.mint, borderRadius: Radius.field, padding: Spacing.three },
 });

@@ -1,63 +1,76 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://unistyl.es/), etc.
+ * Pix design tokens, from the "claude" mockup in /pia-ui: warm off-white canvas, near-black ink,
+ * and a set of soft pastels used for cards, tab highlights and buttons.
  */
 
 import '@/global.css';
 
-import { Platform } from 'react-native';
-
-export const Colors = {
-  light: {
-    text: '#1C1917',
-    background: '#FFFBF7',
-    backgroundElement: '#F5EEE8',
-    backgroundSelected: '#EADFD6',
-    textSecondary: '#6B625C',
-    accent: '#E5484D',
-    onAccent: '#FFFFFF',
-    border: '#E7DDD4',
-    star: '#F5A524',
-  },
-  dark: {
-    text: '#F5F2EF',
-    background: '#121010',
-    backgroundElement: '#1F1B1A',
-    backgroundSelected: '#2C2624',
-    textSecondary: '#B1A8A2',
-    accent: '#FF6369',
-    onAccent: '#FFFFFF',
-    border: '#332C2A',
-    star: '#F5B83D',
-  },
+export const Palette = {
+  canvas: '#FAFAF7',
+  ink: '#16161A',
+  inkSoft: '#3A3A42',
+  muted: '#6E6E76',
+  track: '#EDECE7',
+  line: '#E6E4DE',
+  white: '#FFFFFF',
+  salmon: '#F0907B',
+  yellow: '#F9DA67',
+  lavender: '#B6A8F9',
+  mint: '#9CE1C0',
+  sky: '#9CCAFA',
+  danger: '#C8382F',
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+// Order matters: lists cycle through these, matching the mockup's rhythm.
+export const Pastels = [Palette.salmon, Palette.yellow, Palette.lavender, Palette.mint, Palette.sky] as const;
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
+export function pastelAt(index: number): string {
+  return Pastels[((index % Pastels.length) + Pastels.length) % Pastels.length];
+}
+
+// Stable colour for something that should look the same everywhere (a member, a place).
+export function pastelFor(key: string): string {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) | 0;
+  return pastelAt(Math.abs(hash));
+}
+
+// Each tab has its own accent (active tab circle, floating button).
+export const TabAccent = {
+  places: Palette.salmon,
+  discover: Palette.lavender,
+  memories: Palette.yellow,
+  dates: Palette.mint,
+  settings: Palette.sky,
+} as const;
+
+// The app is light-only for now (the design is built around the light canvas); `dark` mirrors
+// `light` so callers that index by colour scheme keep working.
+const light = {
+  text: Palette.ink,
+  textSecondary: Palette.muted,
+  background: Palette.canvas,
+  backgroundElement: Palette.track,
+  backgroundSelected: Palette.line,
+  card: Palette.white,
+  border: Palette.line,
+  accent: Palette.ink,
+  onAccent: Palette.white,
+  danger: Palette.danger,
+  star: Palette.ink,
+};
+
+export const Colors = { light, dark: light } as const;
+
+export type ThemeColor = keyof typeof light;
+
+export const Font = {
+  regular: 'DMSans_400Regular',
+  medium: 'DMSans_500Medium',
+  semibold: 'DMSans_600SemiBold',
+  bold: 'DMSans_700Bold',
+  heavy: 'DMSans_800ExtraBold',
+} as const;
 
 export const Spacing = {
   half: 2,
@@ -69,5 +82,11 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+export const Radius = {
+  card: 28,
+  tile: 24,
+  field: 18,
+  pill: 999,
+} as const;
+
 export const MaxContentWidth = 800;

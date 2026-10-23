@@ -2,10 +2,14 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
-import { PlaceRow } from '@/components/place-row';
-import { AddButton, Button, Empty, ErrorText, Segmented, TabHeader } from '@/components/ui';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { InitialBadge, PlaceRow } from '@/components/place-row';
+import { Button, Empty, ErrorText, Fab, Segmented, TabHeader, useTabBarSpace } from '@/components/ui';
+import { Palette, pastelAt, Spacing } from '@/constants/theme';
+import { distanceLabel } from '@/lib/format';
+import { distanceMeters } from '@/lib/geo';
 import { useActiveGroup } from '@/lib/groups';
+import { useLocation } from '@/lib/location';
+import { useMembers } from '@/lib/members';
 import { supabase } from '@/lib/supabase';
 import type { SavedPlace } from '@/lib/types';
 import { must, useQuery } from '@/lib/use-query';
@@ -14,6 +18,9 @@ type Tab = 'want' | 'visited';
 
 export default function PlacesScreen() {
   const group = useActiveGroup();
+  const members = useMembers(group.id);
+  const { coords } = useLocation();
+  const bottomSpace = useTabBarSpace();
   const [tab, setTab] = useState<Tab>('want');
 
   const places = useQuery(
@@ -31,23 +38,26 @@ export default function PlacesScreen() {
   const all = places.data ?? [];
   const shown = all.filter((p) => p.status === tab);
   const wantCount = all.filter((p) => p.status === 'want').length;
+  const beenCount = all.length - wantCount;
 
   return (
-    <View style={{ flex: 1 }}>
-      <TabHeader title="Places" action={<AddButton label="Add a place" onPress={() => router.push('/search')} />} />
+    <View style={styles.screen}>
       <FlatList
         data={shown}
         keyExtractor={(p) => p.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: bottomSpace + 72 }]}
         refreshControl={<RefreshControl refreshing={places.loading && !!places.data} onRefresh={places.reload} />}
         ListHeaderComponent={
-          <View style={{ gap: Spacing.two }}>
+          <View style={{ gap: Spacing.three, marginBottom: Spacing.one }}>
+            <View style={{ marginHorizontal: -Spacing.four }}>
+              <TabHeader title="Places" subtitle={`${wantCount} to try · ${beenCount} been`} />
+            </View>
             <Segmented
               value={tab}
               onChange={setTab}
               options={[
-                { value: 'want', label: `Want to go (${wantCount})` },
-                { value: 'visited', label: `Been (${all.length - wantCount})` },
+                { value: 'want', label: 'Want to go' },
+                { value: 'visited', label: 'Been' },
               ]}
             />
             <ErrorText>{places.error}</ErrorText>
@@ -56,28 +66,45 @@ export default function PlacesScreen() {
         ListEmptyComponent={
           places.loading ? undefined : tab === 'want' ? (
             <Empty
+              color={Palette.yellow}
               title="Nothing on the list yet"
               body="Add the places you keep saying you should try."
-              action={<Button title="Add a place" small onPress={() => router.push('/search')} />}
+              action={<Button title="Find a place" icon="search" small onPress={() => router.push('/search')} />}
             />
           ) : (
-            <Empty title="No visits yet" body="When you go somewhere on your list, mark it as visited." />
+            <Empty
+              color={Palette.mint}
+              title="No visits yet"
+              body="When you go somewhere on your list, add a memory and it moves here."
+            />
           )
         }
-        renderItem={({ item }) => (
-          <PlaceRow
-            name={item.name}
-            type={item.primary_type}
-            priceLevel={item.price_level}
-            subtitle={item.address}
-            onPress={() => router.push({ pathname: '/place/[id]', params: { id: item.id } })}
-          />
-        )}
+        renderItem={({ item, index }) => {
+          const color = pastelAt(index);
+          const adder = members.find((m) => m.id === item.added_by);
+          const distance =
+            coords && item.lat != null && item.lng != null
+              ? distanceLabel(distanceMeters(coords, { lat: item.lat, lng: item.lng }))
+              : null;
+          return (
+            <PlaceRow
+              name={item.name}
+              type={item.primary_type}
+              priceLevel={item.price_level}
+              distance={distance}
+              color={color}
+              right={adder ? <InitialBadge initial={adder.initial} /> : null}
+              onPress={() => router.push({ pathname: '/place/[id]', params: { id: item.id, color } })}
+            />
+          );
+        }}
       />
+      <Fab color={Palette.yellow} label="Add a place" onPress={() => router.push('/search')} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  list: { padding: Spacing.three, gap: Spacing.two, paddingBottom: BottomTabInset + Spacing.four },
+  screen: { flex: 1, backgroundColor: Palette.canvas },
+  list: { paddingHorizontal: Spacing.four, gap: Spacing.three - 4 },
 });

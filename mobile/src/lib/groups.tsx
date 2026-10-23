@@ -22,7 +22,11 @@ export function GroupProvider({ children }: { children: ReactNode }) {
   const userId = session?.user.id;
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeId, setActiveIdState] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Which user the groups were loaded for. Deriving `loading` from this (rather than a flag set in an
+  // effect) means it is already true in the same render the session appears, so the root layout
+  // never briefly sees "signed in with no groups" and flashes onboarding.
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  const loading = !!userId && loadedFor !== userId;
 
   const refresh = useCallback(async () => {
     // RLS limits this to groups the user belongs to.
@@ -35,14 +39,21 @@ export function GroupProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!userId) {
       setGroups([]);
-      setLoading(false);
+      setLoadedFor(null);
       return;
     }
-    setLoading(true);
+    let cancelled = false;
     Promise.all([refresh(), AsyncStorage.getItem(ACTIVE_GROUP_KEY)])
-      .then(([, stored]) => setActiveIdState(stored))
+      .then(([, stored]) => {
+        if (!cancelled) setActiveIdState(stored);
+      })
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoadedFor(userId);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [userId, refresh]);
 
   const setActiveId = useCallback((id: string) => {

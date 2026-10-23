@@ -2,14 +2,11 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Font, Palette, Radius, Spacing } from '@/constants/theme';
 import { dayLabel, parseDay, toDay } from '@/lib/format';
 
 // value and onChange use YYYY-MM-DD strings, matching the `date` columns.
 export function DateField({ label, value, onChange }: { label: string; value: string; onChange: (day: string) => void }) {
-  const theme = useTheme();
-
   return (
     <View style={styles.row}>
       <ThemedText type="smallBold" themeColor="textSecondary" style={{ flex: 1 }}>
@@ -20,14 +17,15 @@ export function DateField({ label, value, onChange }: { label: string; value: st
           defaultValue={value}
           onChangeText={(t) => /^\d{4}-\d{2}-\d{2}$/.test(t) && onChange(t)}
           placeholder="YYYY-MM-DD"
-          style={[styles.androidButton, { backgroundColor: theme.backgroundElement, color: theme.text }]}
+          style={[styles.pill, { fontFamily: Font.semibold, color: Palette.ink }]}
         />
       ) : Platform.OS === 'ios' ? (
         <DateTimePicker
           value={parseDay(value)}
           mode="date"
           display="compact"
-          accentColor={theme.accent}
+          accentColor={Palette.ink}
+          themeVariant="light"
           onChange={(_e, date) => date && onChange(toDay(date))}
         />
       ) : (
@@ -40,8 +38,8 @@ export function DateField({ label, value, onChange }: { label: string; value: st
               onChange: (e, date) => e.type === 'set' && date && onChange(toDay(date)),
             })
           }
-          style={[styles.androidButton, { backgroundColor: theme.backgroundElement }]}>
-          <ThemedText>{dayLabel(value)}</ThemedText>
+          style={styles.pill}>
+          <ThemedText type="smallBold">{dayLabel(value)}</ThemedText>
         </Pressable>
       )}
     </View>
@@ -49,6 +47,21 @@ export function DateField({ label, value, onChange }: { label: string; value: st
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
-  androidButton: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, borderRadius: 10 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 60,
+    backgroundColor: Palette.white,
+    borderWidth: 1,
+    borderColor: Palette.line,
+    borderRadius: Radius.field,
+    paddingHorizontal: Spacing.three + 2,
+    paddingVertical: Spacing.two,
+  },
+  pill: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+    backgroundColor: Palette.track,
+  },
 });

@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button, ErrorText, Input } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
+import { Palette, Radius, Spacing } from '@/constants/theme';
 import { useGroups } from '@/lib/groups';
 import { supabase } from '@/lib/supabase';
 import type { Group } from '@/lib/types';
@@ -38,15 +38,15 @@ export function CreateOrJoin({ onDone }: { onDone?: (group: Group) => void }) {
   }
 
   return (
-    <View style={{ gap: Spacing.four }}>
-      <View style={{ gap: Spacing.two }}>
-        <ThemedText type="smallBold">Start a new group</ThemedText>
+    <View style={{ gap: Spacing.three }}>
+      <View style={[styles.panel, { backgroundColor: Palette.salmon }]}>
+        <ThemedText type="subtitle">Start a group</ThemedText>
         <Input placeholder="e.g. Us two, College crew" value={name} onChangeText={setName} maxLength={60} />
         <Button title="Create group" onPress={() => run('create')} loading={busy === 'create'} disabled={!name.trim()} />
       </View>
 
-      <View style={{ gap: Spacing.two }}>
-        <ThemedText type="smallBold">Or join with an invite code</ThemedText>
+      <View style={[styles.panel, { backgroundColor: Palette.sky }]}>
+        <ThemedText type="subtitle">Join with a code</ThemedText>
         <Input
           placeholder="ABC123"
           value={code}
@@ -54,10 +54,11 @@ export function CreateOrJoin({ onDone }: { onDone?: (group: Group) => void }) {
           autoCapitalize="characters"
           autoCorrect={false}
           maxLength={6}
+          style={{ letterSpacing: 4 }}
         />
         <Button
           title="Join group"
-          variant="secondary"
+          variant="white"
           onPress={() => run('join')}
           loading={busy === 'join'}
           disabled={code.trim().length !== 6}
@@ -68,3 +69,7 @@ export function CreateOrJoin({ onDone }: { onDone?: (group: Group) => void }) {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  panel: { borderRadius: Radius.card, padding: Spacing.four - 4, gap: Spacing.three },
+});

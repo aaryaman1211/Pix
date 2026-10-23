@@ -2,9 +2,9 @@ import { Image } from 'expo-image';
 import type { ImagePickerAsset } from 'expo-image-picker';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Palette, Radius, Spacing } from '@/constants/theme';
 import { pickPhotos } from '@/lib/photos';
 
 // Horizontal strip of picked (not yet uploaded) photos, with an add tile.
@@ -15,24 +15,20 @@ export function PhotoPickerStrip({
   assets: ImagePickerAsset[];
   onChange: (assets: ImagePickerAsset[]) => void;
 }) {
-  const theme = useTheme();
-
   async function add() {
     const picked = await pickPhotos();
     if (picked.length) onChange([...assets, ...picked]);
   }
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Add photos"
-        onPress={add}
-        style={[styles.tile, styles.addTile, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-        <ThemedText style={{ fontSize: 28 }}>+</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Photos
-        </ThemedText>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.strip}
+      style={{ marginHorizontal: -Spacing.four }}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Add photos" onPress={add} style={[styles.tile, styles.addTile]}>
+        <Icon name="photo" size={26} />
+        <ThemedText type="smallBold">{assets.length ? 'More' : 'Add photos'}</ThemedText>
       </Pressable>
       {assets.map((a, i) => (
         <Pressable
@@ -47,7 +43,7 @@ export function PhotoPickerStrip({
 }
 
 const styles = StyleSheet.create({
-  strip: { gap: Spacing.two },
-  tile: { width: 96, height: 96, borderRadius: 12 },
-  addTile: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderStyle: 'dashed' },
+  strip: { gap: Spacing.two, paddingHorizontal: Spacing.four },
+  tile: { width: 120, height: 150, borderRadius: Radius.tile },
+  addTile: { alignItems: 'center', justifyContent: 'center', gap: Spacing.two, backgroundColor: Palette.yellow },
 });
