@@ -2,10 +2,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Bob } from '@/components/floating';
 import { Icon } from '@/components/icon';
+import { PastelView } from '@/components/pastel';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, Button, Card, Chip, ErrorText, IconCircle, Loading, Stars } from '@/components/ui';
-import { Palette, pastelAt, pastelFor, Radius, Spacing } from '@/constants/theme';
+import { Pastel, pastelAt, pastelFor, Radius, Spacing } from '@/constants/theme';
+import { useColors } from '@/hooks/use-theme';
 import { useUserId } from '@/lib/auth';
 import { dayLabel, prettyType, priceLabel } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
@@ -21,6 +24,7 @@ export default function PlaceScreen() {
   const group = useActiveGroup();
   const userId = useUserId();
   const members = useMembers(group.id);
+  const c = useColors();
   const [error, setError] = useState<string | null>(null);
 
   const query = useQuery(async () => {
@@ -96,16 +100,18 @@ export default function PlaceScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
-      <View style={[styles.hero, { backgroundColor: color }]}>
-        <View style={[styles.heroCircle, { backgroundColor: color === Palette.yellow ? Palette.salmon : Palette.yellow }]} />
+      <PastelView color={color} style={styles.hero}>
+        <Bob distance={10} ms={5000} style={styles.heroCircle}>
+          <View style={{ flex: 1, borderRadius: 90, backgroundColor: color === Pastel.yellow ? Pastel.salmon : Pastel.yellow }} />
+        </Bob>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }}>
           {chips.map((c) => (
             <Chip key={c} label={c} />
           ))}
         </View>
         <ThemedText style={styles.title}>{place.name}</ThemedText>
-        {place.address && <ThemedText style={{ color: Palette.inkSoft }}>{place.address}</ThemedText>}
-      </View>
+        {place.address && <ThemedText themeColor="textSoft">{place.address}</ThemedText>}
+      </PastelView>
 
       <View style={styles.actions}>
         <Button
@@ -118,7 +124,7 @@ export default function PlaceScreen() {
           icon="map"
           label="Open in Maps"
           size={54}
-          color={Palette.white}
+          color={c.surface}
           onPress={() => Linking.openURL(mapsUrl(place.name, place.place_id))}
         />
       </View>
@@ -139,7 +145,7 @@ export default function PlaceScreen() {
             const m = members.find((x) => x.id === r.user_id);
             return (
               <View key={r.user_id} style={styles.otherRating}>
-                {m && <Avatar member={m} size={28} ring={Palette.white} />}
+                {m && <Avatar member={m} size={28} />}
                 <ThemedText type="small" style={{ flex: 1 }}>
                   {r.profiles?.display_name || 'Someone'}
                 </ThemedText>
@@ -162,7 +168,7 @@ export default function PlaceScreen() {
               style={styles.memory}>
               <View style={{ flex: 1 }}>
                 <ThemedText style={{ fontSize: 18, fontWeight: '700' }}>{m.title}</ThemedText>
-                <ThemedText type="small" style={{ color: Palette.inkSoft }}>
+                <ThemedText type="small" themeColor="textSoft">
                   {dayLabel(m.happened_on)}
                 </ThemedText>
               </View>
@@ -183,7 +189,7 @@ function toFeatures(p: SavedPlace) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Palette.canvas },
+  screen: { flex: 1 },
   container: { padding: Spacing.four, paddingTop: Spacing.two, gap: Spacing.three, paddingBottom: Spacing.six },
   hero: {
     borderRadius: Radius.card,
@@ -192,7 +198,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     overflow: 'hidden',
   },
-  heroCircle: { position: 'absolute', width: 180, height: 180, borderRadius: 90, top: -60, right: -40 },
+  heroCircle: { position: 'absolute', width: 180, height: 180, top: -60, right: -40 },
   title: { fontSize: 36, lineHeight: 40, fontWeight: '800', letterSpacing: -1 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   otherRating: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginTop: Spacing.two },

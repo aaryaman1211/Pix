@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
+import { PastelView } from '@/components/pastel';
+import { RadiusSlider } from '@/components/radius-slider';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Chip, ErrorText, Input, Loading, Segmented, TabHeader, useTabBarSpace } from '@/components/ui';
-import { Palette, Radius, Spacing } from '@/constants/theme';
+import { Pastel, Radius, Spacing } from '@/constants/theme';
+import { useColors } from '@/hooks/use-theme';
+import { setAppearance, useAppearancePref } from '@/lib/appearance';
 import { useAuth } from '@/lib/auth';
 import { useActiveGroup, useGroups } from '@/lib/groups';
 import { describeArea, findAreas, setLocationPref, useLocation } from '@/lib/location';
 import { supabase } from '@/lib/supabase';
-
-const RADIUS_OPTIONS_KM = [1, 3, 5, 10, 25];
 
 type Area = { label: string; lat: number; lng: number };
 
@@ -20,6 +22,8 @@ export default function SettingsScreen() {
   const { session } = useAuth();
   const { coords, error: locationError, refresh: refreshLocation, pref } = useLocation();
   const bottomSpace = useTabBarSpace();
+  const c = useColors();
+  const appearance = useAppearancePref();
 
   // Which option is showing; picking "area" only commits once an area is chosen.
   const [mode, setMode] = useState<'device' | 'custom' | null>(null);
@@ -68,6 +72,7 @@ export default function SettingsScreen() {
   }
 
   async function setRadius(km: number) {
+    if (km * 1000 === group.search_radius_m) return;
     const { error } = await supabase.from('groups').update({ search_radius_m: km * 1000 }).eq('id', group.id);
     if (error) setError(error.message);
     else refreshGroups();
@@ -95,7 +100,7 @@ export default function SettingsScreen() {
             />
 
             {shownMode === 'device' ? (
-              <View style={[styles.current, { backgroundColor: Palette.mint }]}>
+              <PastelView color={Pastel.mint} style={styles.current}>
                 <Icon name="pin" size={22} />
                 <View style={{ flex: 1 }}>
                   <ThemedText type="label">Right now</ThemedText>
@@ -104,11 +109,11 @@ export default function SettingsScreen() {
                   </ThemedText>
                 </View>
                 {locationError && <Button title="Retry" small variant="white" onPress={refreshLocation} />}
-              </View>
+              </PastelView>
             ) : (
               <>
                 {pref.mode === 'custom' && (
-                  <View style={[styles.current, { backgroundColor: Palette.sky }]}>
+                  <PastelView color={Pastel.sky} style={styles.current}>
                     <Icon name="pin" size={22} />
                     <View style={{ flex: 1 }}>
                       <ThemedText type="label">Searching around</ThemedText>
@@ -116,7 +121,7 @@ export default function SettingsScreen() {
                         {pref.label}
                       </ThemedText>
                     </View>
-                  </View>
+                  </PastelView>
                 )}
                 <View style={styles.searchRow}>
                   <View style={{ flex: 1 }}>
@@ -135,9 +140,9 @@ export default function SettingsScreen() {
                   <Pressable
                     key={`${r.lat},${r.lng}`}
                     onPress={() => pick(r)}
-                    style={({ pressed }) => [styles.result, pressed && { opacity: 0.7 }]}>
+                    style={({ pressed }) => [styles.result, { borderBottomColor: c.line }, pressed && { opacity: 0.7 }]}>
                     <ThemedText style={{ flex: 1, fontWeight: '600' }}>{r.label}</ThemedText>
-                    <Chip label="Use this" color={Palette.track} />
+                    <Chip label="Use this" tone="track" />
                   </Pressable>
                 ))}
               </>
@@ -152,27 +157,32 @@ export default function SettingsScreen() {
             <ThemedText type="label" themeColor="textSecondary">
               Search radius
             </ThemedText>
-            <View style={styles.radiusRow}>
-              <ThemedText style={styles.radiusValue}>{group.search_radius_m / 1000}</ThemedText>
-              <ThemedText style={{ fontSize: 20, fontWeight: '700', marginBottom: 10 }}>km</ThemedText>
-            </View>
-            <View style={styles.chips}>
-              {RADIUS_OPTIONS_KM.map((km) => (
-                <Chip
-                  key={km}
-                  label={`${km} km`}
-                  color={Palette.track}
-                  selected={group.search_radius_m === km * 1000}
-                  onPress={() => setRadius(km)}
-                />
-              ))}
-            </View>
+            <RadiusSlider km={group.search_radius_m / 1000} onCommit={setRadius} />
             <ThemedText type="small" themeColor="textSecondary">
               Search and Discover look within this distance. Shared by everyone in {group.name}.
             </ThemedText>
           </Card>
 
           <ErrorText>{error}</ErrorText>
+
+          {/* Appearance */}
+          <Card style={{ gap: Spacing.three }}>
+            <ThemedText type="label" themeColor="textSecondary">
+              Appearance
+            </ThemedText>
+            <Segmented
+              value={appearance}
+              onChange={setAppearance}
+              options={[
+                { value: 'system', label: 'System', icon: 'phone' },
+                { value: 'light', label: 'Light', icon: 'sun' },
+                { value: 'dark', label: 'Dark', icon: 'moon' },
+              ]}
+            />
+            <ThemedText type="small" themeColor="textSecondary">
+              System follows your phone's light or dark mode.
+            </ThemedText>
+          </Card>
 
           {/* Account */}
           <Card style={{ gap: Spacing.two }}>
@@ -189,7 +199,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Palette.canvas },
+  screen: { flex: 1 },
   body: { paddingHorizontal: Spacing.four, gap: Spacing.three },
   current: {
     flexDirection: 'row',
@@ -206,9 +216,5 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingVertical: Spacing.two,
     borderBottomWidth: 1,
-    borderBottomColor: Palette.line,
   },
-  radiusRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
-  radiusValue: { fontSize: 64, lineHeight: 68, fontWeight: '800', letterSpacing: -2 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
 });

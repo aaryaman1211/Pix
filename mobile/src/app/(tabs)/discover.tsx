@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Animated, PanResponder, StyleSheet, useWindowDimensions, View } from 'react-native';
 
+import { Bob } from '@/components/floating';
 import { Icon } from '@/components/icon';
+import { PastelScope } from '@/components/pastel';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Chip, Empty, ErrorText, IconCircle, Loading, TabHeader, useTabBarSpace } from '@/components/ui';
-import { Palette, Radius, Spacing } from '@/constants/theme';
+import { OnPastel, Pastel, Radius, Spacing } from '@/constants/theme';
+import { useColors } from '@/hooks/use-theme';
 import { distanceLabel, prettyType, priceLabel } from '@/lib/format';
 import { invoke } from '@/lib/functions';
 import { useActiveGroup } from '@/lib/groups';
@@ -17,17 +20,18 @@ type Response = { results: Recommendation[]; topTypes: string[] };
 
 // Card colour, then the two decoration circles on it.
 const CARD_THEMES = [
-  [Palette.lavender, Palette.yellow, Palette.salmon],
-  [Palette.mint, Palette.sky, Palette.yellow],
-  [Palette.yellow, Palette.salmon, Palette.lavender],
-  [Palette.salmon, Palette.yellow, Palette.mint],
-  [Palette.sky, Palette.mint, Palette.salmon],
+  [Pastel.lavender, Pastel.yellow, Pastel.salmon],
+  [Pastel.mint, Pastel.sky, Pastel.yellow],
+  [Pastel.yellow, Pastel.salmon, Pastel.lavender],
+  [Pastel.salmon, Pastel.yellow, Pastel.mint],
+  [Pastel.sky, Pastel.mint, Pastel.salmon],
 ] as const;
 
 const SWIPE_THRESHOLD = 110;
 
 export default function DiscoverScreen() {
   const group = useActiveGroup();
+  const c = useColors();
   const { coords, error: locationError, refresh: refreshLocation, pref } = useLocation();
   const { width } = useWindowDimensions();
   const bottomSpace = useTabBarSpace();
@@ -108,7 +112,7 @@ export default function DiscoverScreen() {
   if (locationError) {
     body = (
       <Empty
-        color={Palette.sky}
+        color={Pastel.sky}
         title="Where are you?"
         body={locationError}
         action={<Button title="Try again" small onPress={refreshLocation} />}
@@ -136,15 +140,15 @@ export default function DiscoverScreen() {
             style={[styles.card, { transform: [{ translateX: pos.x }, { translateY: pos.y }, { rotate }] }]}>
             <PlaceCard item={top} theme={CARD_THEMES[seen % CARD_THEMES.length]} />
             <Animated.View style={[styles.stamp, styles.stampSave, { opacity: saveOpacity }]}>
-              <ThemedText type="smallBold">SAVE</ThemedText>
+              <ThemedText type="smallBold" style={{ color: OnPastel.text }}>SAVE</ThemedText>
             </Animated.View>
             <Animated.View style={[styles.stamp, styles.stampSkip, { opacity: skipOpacity }]}>
-              <ThemedText type="smallBold">SKIP</ThemedText>
+              <ThemedText type="smallBold" style={{ color: OnPastel.text }}>SKIP</ThemedText>
             </Animated.View>
           </Animated.View>
         </View>
         <View style={styles.actions}>
-          <IconCircle icon="close" label="Skip" size={60} color={Palette.white} onPress={() => fling(-1)} />
+          <IconCircle icon="close" label="Skip" size={60} color={c.surface} onPress={() => fling(-1)} />
           <Button title="Save to list" icon="heart" onPress={() => fling(1)} style={{ flex: 1 }} />
         </View>
       </View>
@@ -172,9 +176,14 @@ function PlaceCard({ item, theme }: { item: Recommendation; theme: readonly [str
     ? `${item.rating.toFixed(1)} ★${item.ratingCount ? ` · ${item.ratingCount.toLocaleString()} reviews` : ''}`
     : null;
   return (
+    <PastelScope>
     <View style={[StyleSheet.absoluteFill, styles.cardInner, { backgroundColor: bg }]}>
-      <View style={[styles.circleBig, { backgroundColor: big }]} />
-      <View style={[styles.circleSmall, { backgroundColor: small }]} />
+      <Bob distance={12} ms={5200} style={styles.circleBig}>
+        <View style={[styles.circleFill, { backgroundColor: big, borderRadius: 115 }]} />
+      </Bob>
+      <Bob distance={9} ms={3400} delay={600} style={styles.circleSmall}>
+        <View style={[styles.circleFill, { backgroundColor: small, borderRadius: 36 }]} />
+      </Bob>
       <View style={{ flex: 1 }} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }}>
         {chips.map((c) => (
@@ -184,7 +193,7 @@ function PlaceCard({ item, theme }: { item: Recommendation; theme: readonly [str
       <ThemedText style={styles.name} numberOfLines={2} adjustsFontSizeToFit>
         {item.name}
       </ThemedText>
-      {rating && <ThemedText style={{ color: Palette.inkSoft }}>{rating}</ThemedText>}
+      {rating && <ThemedText themeColor="textSoft">{rating}</ThemedText>}
       <View style={styles.reason}>
         <Icon name="sparkle" size={16} />
         <ThemedText type="smallBold" numberOfLines={1} style={{ flex: 1 }}>
@@ -192,24 +201,26 @@ function PlaceCard({ item, theme }: { item: Recommendation; theme: readonly [str
         </ThemedText>
       </View>
     </View>
+    </PastelScope>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Palette.canvas },
+  screen: { flex: 1 },
   body: { flex: 1, paddingHorizontal: Spacing.four, gap: Spacing.two },
   deck: { flex: 1, marginBottom: Spacing.four },
   card: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, borderRadius: Radius.card },
   behind: { top: 16, bottom: -14, left: 16, right: 16 },
   cardInner: { borderRadius: Radius.card, padding: Spacing.four, gap: Spacing.two, overflow: 'hidden' },
-  circleBig: { position: 'absolute', width: 230, height: 230, borderRadius: 115, top: -70, right: -70 },
-  circleSmall: { position: 'absolute', width: 72, height: 72, borderRadius: 36, top: 110, right: 50 },
+  circleBig: { position: 'absolute', width: 230, height: 230, top: -70, right: -70 },
+  circleSmall: { position: 'absolute', width: 72, height: 72, top: 110, right: 50 },
+  circleFill: { width: '100%', height: '100%' },
   name: { fontSize: 40, lineHeight: 44, fontWeight: '800', letterSpacing: -1.2, marginTop: Spacing.two },
   reason: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    backgroundColor: Palette.white,
+    backgroundColor: OnPastel.chip,
     borderRadius: Radius.pill,
     paddingHorizontal: Spacing.three + 2,
     paddingVertical: 14,
@@ -221,7 +232,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
-    backgroundColor: Palette.white,
+    backgroundColor: OnPastel.chip,
   },
   stampSave: { left: Spacing.four },
   stampSkip: { right: Spacing.four },

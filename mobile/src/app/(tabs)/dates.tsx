@@ -2,9 +2,11 @@ import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
+import { PastelScope } from '@/components/pastel';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Chip, Empty, ErrorText, Fab, TabHeader, useTabBarSpace } from '@/components/ui';
-import { Palette, pastelAt, Radius, Spacing, TabAccent } from '@/constants/theme';
+import { Pastel, pastelAt, Radius, Spacing, TabAccent, type Theme } from '@/constants/theme';
+import { useColors, useStyles } from '@/hooks/use-theme';
 import { daysUntil, nextOccurrence, parseDay } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
 import { syncReminders } from '@/lib/reminders';
@@ -63,7 +65,7 @@ export default function DatesScreen() {
 
           {all.length === 0 && !query.loading && (
             <Empty
-              color={Palette.mint}
+              color={Pastel.mint}
               title="No dates yet"
               body="Anniversaries, birthdays, the day you met. Everyone in the group gets a reminder."
               action={<Button title="Add a date" small onPress={() => router.push('/date/new')} />}
@@ -71,6 +73,7 @@ export default function DatesScreen() {
           )}
 
           {first && (
+            <PastelScope>
             <Pressable onLongPress={() => remove(first)} style={styles.hero}>
               <Chip label={first.days === 0 ? 'Today' : 'Up next'} />
               {first.days === 0 ? (
@@ -85,6 +88,7 @@ export default function DatesScreen() {
                 {first.title} · {shortDate(first.next!)}
               </ThemedText>
             </Pressable>
+            </PastelScope>
           )}
 
           {rest.map((d, i) => (
@@ -107,7 +111,7 @@ export default function DatesScreen() {
           {past.map((d) => (
             <DateRow
               key={d.id}
-              color={Palette.track}
+              color={null}
               big="✓"
               small="done"
               title={d.title}
@@ -136,21 +140,26 @@ function DateRow({
   meta,
   onLongPress,
 }: {
-  color: string;
+  color: string | null;
   big: string;
   small: string;
   title: string;
   meta: string;
   onLongPress: () => void;
 }) {
-  return (
-    <Pressable onLongPress={onLongPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.85 }]}>
-      <View style={[styles.count, { backgroundColor: color }]}>
+  const c = useColors();
+  const s = useStyles(makeStyles);
+  const count = (
+    <View style={[styles.count, { backgroundColor: color ?? c.track }]}>
         <ThemedText style={styles.countNumber} adjustsFontSizeToFit numberOfLines={1}>
           {big}
         </ThemedText>
         <ThemedText style={{ fontSize: 12, lineHeight: 14, fontWeight: '700' }}>{small}</ThemedText>
-      </View>
+    </View>
+  );
+  return (
+    <Pressable onLongPress={onLongPress} style={({ pressed }) => [s.row, pressed && { opacity: 0.85 }]}>
+      {color ? <PastelScope>{count}</PastelScope> : count}
       <View style={{ flex: 1, gap: 2 }}>
         <ThemedText style={{ fontSize: 18, fontWeight: '700' }} numberOfLines={1}>
           {title}
@@ -164,10 +173,10 @@ function DateRow({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Palette.canvas },
+  screen: { flex: 1 },
   body: { paddingHorizontal: Spacing.four, gap: Spacing.three - 4 },
   hero: {
-    backgroundColor: Palette.mint,
+    backgroundColor: Pastel.mint,
     borderRadius: Radius.card,
     padding: Spacing.four,
     gap: 2,
@@ -176,16 +185,20 @@ const styles = StyleSheet.create({
   heroNumber: { fontSize: 104, lineHeight: 112, fontWeight: '800', letterSpacing: -5, marginTop: Spacing.two },
   heroToday: { fontSize: 56, lineHeight: 64, fontWeight: '800', letterSpacing: -2, marginVertical: Spacing.two },
   heroTitle: { fontSize: 24, lineHeight: 30, fontWeight: '700', letterSpacing: -0.5 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    backgroundColor: Palette.white,
-    borderRadius: Radius.tile,
-    borderWidth: 1,
-    borderColor: Palette.line,
-    padding: Spacing.three - 4,
-  },
   count: { width: 68, height: 68, borderRadius: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   countNumber: { fontSize: 26, lineHeight: 30, fontWeight: '800', letterSpacing: -0.8 },
 });
+
+const makeStyles = (c: Theme) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.three,
+      backgroundColor: c.surface,
+      borderRadius: Radius.tile,
+      borderWidth: 1,
+      borderColor: c.line,
+      padding: Spacing.three - 4,
+    },
+  });

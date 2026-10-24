@@ -3,9 +3,10 @@ import { router } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
+import { PastelScope } from '@/components/pastel';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Empty, ErrorText, Fab, TabHeader, useTabBarSpace } from '@/components/ui';
-import { Palette, pastelAt, Radius, Spacing } from '@/constants/theme';
+import { OnPastel, Pastel, pastelAt, Radius, Spacing } from '@/constants/theme';
 import { parseDay } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
 import { signedUrls } from '@/lib/photos';
@@ -73,11 +74,12 @@ export default function MemoriesScreen() {
             const cover = m.memory_photos[0]?.storage_path;
             const years = today.getFullYear() - parseDay(m.happened_on).getFullYear();
             return (
-              <Pressable key={m.id} onPress={() => open(m.id)} style={({ pressed }) => [styles.otd, pressed && styles.pressed]}>
+              <PastelScope key={m.id}>
+              <Pressable onPress={() => open(m.id)} style={({ pressed }) => [styles.otd, pressed && styles.pressed]}>
                 {cover ? (
                   <Image source={{ uri: covers[cover], cacheKey: cover }} style={styles.otdThumb} contentFit="cover" />
                 ) : (
-                  <View style={[styles.otdThumb, { backgroundColor: Palette.salmon }]} />
+                  <View style={[styles.otdThumb, { backgroundColor: Pastel.salmon }]} />
                 )}
                 <View style={{ flex: 1 }}>
                   <ThemedText type="label">
@@ -89,12 +91,13 @@ export default function MemoriesScreen() {
                 </View>
                 <Icon name="chevronRight" size={16} />
               </Pressable>
+              </PastelScope>
             );
           })}
 
           {memories.length === 0 && !query.loading ? (
             <Empty
-              color={Palette.yellow}
+              color={Pastel.yellow}
               title="No memories yet"
               body="Photos and notes from a date or a day out, all in one shared folder."
               action={<Button title="Add a memory" small onPress={() => router.push('/memory/new')} />}
@@ -107,8 +110,8 @@ export default function MemoriesScreen() {
                     const cover = item.memory_photos[0]?.storage_path;
                     const date = parseDay(item.happened_on).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
                     return (
+                      <PastelScope key={item.id}>
                       <Pressable
-                        key={item.id}
                         onPress={() => open(item.id)}
                         style={({ pressed }) => [
                           styles.tile,
@@ -133,6 +136,7 @@ export default function MemoriesScreen() {
                           {item.title}
                         </ThemedText>
                       </Pressable>
+                      </PastelScope>
                     );
                   })}
                 </View>
@@ -141,20 +145,20 @@ export default function MemoriesScreen() {
           )}
         </View>
       </ScrollView>
-      <Fab color={Palette.ink} dark label="New memory" onPress={() => router.push('/memory/new')} />
+      <Fab label="New memory" onPress={() => router.push('/memory/new')} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Palette.canvas },
+  screen: { flex: 1 },
   body: { paddingHorizontal: Spacing.four, gap: Spacing.three - 4 },
   pressed: { transform: [{ scale: 0.98 }] },
   otd: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    backgroundColor: Palette.yellow,
+    backgroundColor: Pastel.yellow,
     borderRadius: Radius.tile,
     padding: Spacing.three - 4,
     paddingRight: Spacing.four - 4,
@@ -165,7 +169,7 @@ const styles = StyleSheet.create({
   tile: { borderRadius: Radius.tile, padding: Spacing.three - 4, overflow: 'hidden' },
   dateChip: {
     alignSelf: 'flex-start',
-    backgroundColor: Palette.white,
+    backgroundColor: OnPastel.chip,
     borderRadius: Radius.pill,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -173,7 +177,7 @@ const styles = StyleSheet.create({
   tileTitle: { fontSize: 18, lineHeight: 22, fontWeight: '700', letterSpacing: -0.3 },
   tileTitleOnPhoto: {
     alignSelf: 'flex-start',
-    backgroundColor: Palette.white,
+    backgroundColor: OnPastel.chip,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 6,

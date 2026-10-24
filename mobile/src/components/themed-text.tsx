@@ -1,11 +1,14 @@
 import { StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 
-import { Font, ThemeColor } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { usePastel } from '@/components/pastel';
+import { Font, OnPastel } from '@/constants/theme';
+import { useColors } from '@/hooks/use-theme';
+
+export type TextTone = 'text' | 'textSoft' | 'textMuted' | 'textSecondary' | 'danger' | 'onPrimary';
 
 export type ThemedTextProps = TextProps & {
   type?: 'default' | 'title' | 'subtitle' | 'small' | 'smallBold' | 'label' | 'link';
-  themeColor?: ThemeColor;
+  themeColor?: TextTone;
 };
 
 // Custom fonts ship one file per weight, so map fontWeight onto the matching DM Sans family.
@@ -30,15 +33,25 @@ function familyFor(weight: TextStyle['fontWeight']): string {
   }
 }
 
+// Text colour by tone. On a pastel card it stays dark in both themes.
+export function useTextColor(tone: TextTone = 'text'): string {
+  const c = useColors();
+  const onPastel = usePastel();
+  if (onPastel) {
+    if (tone === 'textSoft') return OnPastel.soft;
+    if (tone === 'textMuted' || tone === 'textSecondary') return OnPastel.muted;
+    if (tone === 'onPrimary') return OnPastel.onButton;
+    if (tone === 'danger') return c.danger;
+    return OnPastel.text;
+  }
+  if (tone === 'textSecondary') return c.textMuted;
+  return c[tone];
+}
+
 export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
-  const theme = useTheme();
+  const color = useTextColor(themeColor);
   const { fontWeight, ...flat } = StyleSheet.flatten([styles[type], style]) ?? {};
-  return (
-    <Text
-      style={[{ color: theme[themeColor ?? 'text'] }, flat, { fontFamily: familyFor(fontWeight) }]}
-      {...rest}
-    />
-  );
+  return <Text style={[{ color }, flat, { fontFamily: familyFor(fontWeight) }]} {...rest} />;
 }
 
 const styles = StyleSheet.create({

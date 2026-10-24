@@ -1,28 +1,23 @@
 /**
- * Pix design tokens, from the "claude" mockup in /pia-ui: warm off-white canvas, near-black ink,
- * and a set of soft pastels used for cards, tab highlights and buttons.
+ * Pix design tokens, from the "claude" mockup in /pia-ui: warm canvas, near-black ink and soft pastels.
+ *
+ * Colours that change between light and dark live in `Themes` and are read with `useColors()` /
+ * `useStyles()` (hooks/use-theme.ts). Pastels are the same in both themes; anything drawn on a pastel
+ * uses `OnPastel`, so cards look the same in light and dark (dark text on a bright card).
  */
 
 import '@/global.css';
 
-export const Palette = {
-  canvas: '#FAFAF7',
-  ink: '#16161A',
-  inkSoft: '#3A3A42',
-  muted: '#6E6E76',
-  track: '#EDECE7',
-  line: '#E6E4DE',
-  white: '#FFFFFF',
+export const Pastel = {
   salmon: '#F0907B',
   yellow: '#F9DA67',
   lavender: '#B6A8F9',
   mint: '#9CE1C0',
   sky: '#9CCAFA',
-  danger: '#C8382F',
 } as const;
 
 // Order matters: lists cycle through these, matching the mockup's rhythm.
-export const Pastels = [Palette.salmon, Palette.yellow, Palette.lavender, Palette.mint, Palette.sky] as const;
+export const Pastels = [Pastel.salmon, Pastel.yellow, Pastel.lavender, Pastel.mint, Pastel.sky] as const;
 
 export function pastelAt(index: number): string {
   return Pastels[((index % Pastels.length) + Pastels.length) % Pastels.length];
@@ -35,34 +30,62 @@ export function pastelFor(key: string): string {
   return pastelAt(Math.abs(hash));
 }
 
-// Each tab has its own accent (active tab circle, floating button).
-export const TabAccent = {
-  places: Palette.salmon,
-  discover: Palette.lavender,
-  memories: Palette.yellow,
-  dates: Palette.mint,
-  settings: Palette.sky,
+// Ink, chips and buttons on top of a pastel card, in either theme.
+export const OnPastel = {
+  text: '#16161A',
+  soft: '#3A3A42',
+  muted: '#55555C',
+  chip: '#FFFFFF',
+  button: '#16161A',
+  onButton: '#FFFFFF',
 } as const;
 
-// The app is light-only for now (the design is built around the light canvas); `dark` mirrors
-// `light` so callers that index by colour scheme keep working.
+// Each tab has its own accent (active tab circle, floating button).
+export const TabAccent = {
+  places: Pastel.salmon,
+  discover: Pastel.lavender,
+  memories: Pastel.yellow,
+  dates: Pastel.mint,
+  settings: Pastel.sky,
+} as const;
+
 const light = {
-  text: Palette.ink,
-  textSecondary: Palette.muted,
-  background: Palette.canvas,
-  backgroundElement: Palette.track,
-  backgroundSelected: Palette.line,
-  card: Palette.white,
-  border: Palette.line,
-  accent: Palette.ink,
-  onAccent: Palette.white,
-  danger: Palette.danger,
-  star: Palette.ink,
+  scheme: 'light' as const,
+  canvas: '#FAFAF7',
+  surface: '#FFFFFF',
+  track: '#EDECE7',
+  line: '#E6E4DE',
+  text: '#16161A',
+  textSoft: '#3A3A42',
+  textMuted: '#6E6E76',
+  primary: '#16161A',
+  onPrimary: '#FFFFFF',
+  danger: '#C8382F',
+  tabBar: '#16161A',
+  tabIcon: '#C9C9CF',
+  shadow: '#000000',
 };
 
-export const Colors = { light, dark: light } as const;
+export type Theme = Omit<typeof light, 'scheme'> & { scheme: 'light' | 'dark' };
 
-export type ThemeColor = keyof typeof light;
+const dark: Theme = {
+  scheme: 'dark',
+  canvas: '#111113',
+  surface: '#1C1C20',
+  track: '#26262B',
+  line: '#2E2E34',
+  text: '#F4F3EF',
+  textSoft: '#CFCEC9',
+  textMuted: '#9A9AA2',
+  primary: '#F4F3EF',
+  onPrimary: '#16161A',
+  danger: '#FF7A70',
+  tabBar: '#232328',
+  tabIcon: '#8E8E96',
+  shadow: '#000000',
+};
+
+export const Themes = { light, dark } as const;
 
 export const Font = {
   regular: 'DMSans_400Regular',

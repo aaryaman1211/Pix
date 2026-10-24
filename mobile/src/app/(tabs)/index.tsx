@@ -4,7 +4,7 @@ import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { InitialBadge, PlaceRow } from '@/components/place-row';
 import { Button, Empty, ErrorText, Fab, Segmented, TabHeader, useTabBarSpace } from '@/components/ui';
-import { Palette, pastelAt, Spacing } from '@/constants/theme';
+import { Pastel, pastelAt, Spacing } from '@/constants/theme';
 import { distanceLabel } from '@/lib/format';
 import { distanceMeters } from '@/lib/geo';
 import { useActiveGroup } from '@/lib/groups';
@@ -66,14 +66,14 @@ export default function PlacesScreen() {
         ListEmptyComponent={
           places.loading ? undefined : tab === 'want' ? (
             <Empty
-              color={Palette.yellow}
+              color={Pastel.yellow}
               title="Nothing on the list yet"
               body="Add the places you keep saying you should try."
               action={<Button title="Find a place" icon="search" small onPress={() => router.push('/search')} />}
             />
           ) : (
             <Empty
-              color={Palette.mint}
+              color={Pastel.mint}
               title="No visits yet"
               body="When you go somewhere on your list, add a memory and it moves here."
             />
@@ -99,12 +99,12 @@ export default function PlacesScreen() {
           );
         }}
       />
-      <Fab color={Palette.yellow} label="Add a place" onPress={() => router.push('/search')} />
+      <Fab color={Pastel.yellow} label="Add a place" onPress={() => router.push('/search')} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Palette.canvas },
+  screen: { flex: 1 },
   list: { paddingHorizontal: Spacing.four, gap: Spacing.three - 4 },
 });

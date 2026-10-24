@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PastelView } from '@/components/pastel';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Chip, ErrorText, IconCircle, Loading } from '@/components/ui';
-import { Palette, pastelFor, Radius, Spacing } from '@/constants/theme';
+import { OnPastel, pastelFor, Radius, Spacing } from '@/constants/theme';
 import { dayLabel } from '@/lib/format';
 import { deletePhotos, pickPhotos, signedUrls, uploadPhotos } from '@/lib/photos';
 import { supabase } from '@/lib/supabase';
@@ -76,7 +77,7 @@ export default function MemoryScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
-      <View style={[styles.hero, { backgroundColor: pastelFor(memory.id) }]}>
+      <PastelView color={pastelFor(memory.id)} style={styles.hero}>
         {cover && (
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setViewing(cover.storage_path)} accessibilityLabel="Open photo">
             <Image source={{ uri: urls[cover.storage_path], cacheKey: cover.storage_path }} style={StyleSheet.absoluteFill} contentFit="cover" />
@@ -87,10 +88,10 @@ export default function MemoryScreen() {
           <Chip label={dayLabel(memory.happened_on)} />
           {memory.place_name && <Chip label={memory.place_name} icon="pin" />}
         </View>
-      </View>
+      </PastelView>
 
       <ThemedText type="title">{memory.title}</ThemedText>
-      {memory.notes && <ThemedText style={{ fontSize: 17, lineHeight: 25, color: Palette.inkSoft }}>{memory.notes}</ThemedText>}
+      {memory.notes && <ThemedText themeColor="textSoft" style={{ fontSize: 17, lineHeight: 25 }}>{memory.notes}</ThemedText>}
 
       {rest.length > 0 && (
         <View style={styles.grid}>
@@ -123,7 +124,7 @@ export default function MemoryScreen() {
             <Image source={{ uri: urls[viewing], cacheKey: viewing }} style={StyleSheet.absoluteFill} contentFit="contain" />
           )}
           <View style={[styles.viewerClose, { top: insets.top + Spacing.two }]}>
-            <IconCircle icon="close" label="Close photo" color={Palette.white} onPress={() => setViewing(null)} />
+            <IconCircle icon="close" label="Close photo" color={OnPastel.chip} iconColor={OnPastel.text} onPress={() => setViewing(null)} />
           </View>
         </View>
       </Modal>
@@ -132,7 +133,7 @@ export default function MemoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Palette.canvas },
+  screen: { flex: 1 },
   container: { padding: Spacing.four, paddingTop: Spacing.two, gap: Spacing.three, paddingBottom: Spacing.six },
   hero: { height: 340, borderRadius: Radius.card, padding: Spacing.three, overflow: 'hidden' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },

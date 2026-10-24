@@ -6,10 +6,11 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pix",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.aaryaman.pix"
+      "bundleIdentifier": "com.aaryaman.pix",
+      "appleTeamId": "47TRF75565"
     },
     "android": {
       "adaptiveIcon": {

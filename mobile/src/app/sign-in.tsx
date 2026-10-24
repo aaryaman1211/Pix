@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FloatingBlobs } from '@/components/floating';
 import { HeroBlob } from '@/components/hero-blob';
+import { PastelView } from '@/components/pastel';
 import { ThemedText } from '@/components/themed-text';
 import { Button, ErrorText, Input, Segmented } from '@/components/ui';
-import { Palette, Radius, Spacing } from '@/constants/theme';
+import { Pastel, Radius, Spacing } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 
 type Mode = 'sign-in' | 'sign-up';
@@ -52,13 +54,14 @@ export default function SignInScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <FloatingBlobs strength={0.8} />
       <ScrollView
         contentContainerStyle={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + Spacing.four }]}
         keyboardShouldPersistTaps="handled">
         <HeroBlob />
         <View style={{ gap: Spacing.two, marginBottom: Spacing.three }}>
           <ThemedText style={styles.logo}>Pix</ThemedText>
-          <ThemedText style={styles.tagline}>Places you want to go, and the memories you make there.</ThemedText>
+          <ThemedText themeColor="textSoft" style={styles.tagline}>Places you want to go, and the memories you make there.</ThemedText>
         </View>
 
         <Segmented
@@ -94,9 +97,9 @@ export default function SignInScreen() {
 
         <ErrorText>{error}</ErrorText>
         {notice && (
-          <View style={styles.notice}>
+          <PastelView color={Pastel.mint} style={styles.notice}>
             <ThemedText type="smallBold">{notice}</ThemedText>
-          </View>
+          </PastelView>
         )}
 
         <Button
@@ -112,9 +115,9 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Palette.canvas },
+  screen: { flex: 1 },
   container: { flexGrow: 1, paddingHorizontal: Spacing.four, gap: Spacing.three },
   logo: { fontSize: 72, lineHeight: 76, fontWeight: '800', letterSpacing: -3 },
-  tagline: { fontSize: 20, lineHeight: 26, fontWeight: '600', color: Palette.inkSoft, maxWidth: 300 },
-  notice: { backgroundColor: Palette.mint, borderRadius: Radius.field, padding: Spacing.three },
+  tagline: { fontSize: 20, lineHeight: 26, fontWeight: '600', maxWidth: 300 },
+  notice: { borderRadius: Radius.field, padding: Spacing.three },
 });

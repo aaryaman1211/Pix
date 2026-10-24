@@ -1,7 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import type { ColorValue } from 'react-native';
 
-import { Palette } from '@/constants/theme';
+import { useTextColor } from '@/components/themed-text';
 
 // SF Symbols on iOS, Material Symbols on Android and web.
 const ICONS = {
@@ -22,17 +22,22 @@ const ICONS = {
   map: { ios: 'map', android: 'map' },
   share: { ios: 'square.and.arrow.up', android: 'share' },
   trash: { ios: 'trash', android: 'delete' },
+  sun: { ios: 'sun.max', android: 'light_mode' },
+  moon: { ios: 'moon', android: 'dark_mode' },
+  phone: { ios: 'iphone', android: 'smartphone' },
 } as const;
 
 export type IconName = keyof typeof ICONS;
 
-export function Icon({ name, size = 20, color = Palette.ink }: { name: IconName; size?: number; color?: ColorValue }) {
+// Defaults to the current text colour (dark on pastel cards, theme ink elsewhere).
+export function Icon({ name, size = 20, color }: { name: IconName; size?: number; color?: ColorValue }) {
+  const fallback = useTextColor();
   const { ios, android } = ICONS[name];
   return (
     <SymbolView
       name={{ ios, android, web: android }}
       size={size}
-      tintColor={color}
+      tintColor={color ?? fallback}
       weight="semibold"
       style={{ width: size, height: size }}
     />

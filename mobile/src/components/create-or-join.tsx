@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { PastelView } from '@/components/pastel';
 import { ThemedText } from '@/components/themed-text';
 import { Button, ErrorText, Input } from '@/components/ui';
-import { Palette, Radius, Spacing } from '@/constants/theme';
+import { Pastel, Radius, Spacing } from '@/constants/theme';
 import { useGroups } from '@/lib/groups';
 import { supabase } from '@/lib/supabase';
 import type { Group } from '@/lib/types';
@@ -39,13 +40,13 @@ export function CreateOrJoin({ onDone }: { onDone?: (group: Group) => void }) {
 
   return (
     <View style={{ gap: Spacing.three }}>
-      <View style={[styles.panel, { backgroundColor: Palette.salmon }]}>
+      <PastelView color={Pastel.salmon} style={styles.panel}>
         <ThemedText type="subtitle">Start a group</ThemedText>
         <Input placeholder="e.g. Us two, College crew" value={name} onChangeText={setName} maxLength={60} />
         <Button title="Create group" onPress={() => run('create')} loading={busy === 'create'} disabled={!name.trim()} />
-      </View>
+      </PastelView>
 
-      <View style={[styles.panel, { backgroundColor: Palette.sky }]}>
+      <PastelView color={Pastel.sky} style={styles.panel}>
         <ThemedText type="subtitle">Join with a code</ThemedText>
         <Input
           placeholder="ABC123"
@@ -63,7 +64,7 @@ export function CreateOrJoin({ onDone }: { onDone?: (group: Group) => void }) {
           loading={busy === 'join'}
           disabled={code.trim().length !== 6}
         />
-      </View>
+      </PastelView>
 
       <ErrorText>{error}</ErrorText>
     </View>

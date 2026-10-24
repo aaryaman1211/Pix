@@ -6,28 +6,31 @@ import {
   DMSans_800ExtraBold,
   useFonts,
 } from '@expo-google-fonts/dm-sans';
-import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { useColorScheme } from 'react-native';
 
-import { Font, Palette } from '@/constants/theme';
+import { Font, Themes } from '@/constants/theme';
+import { useColors } from '@/hooks/use-theme';
+import { loadAppearance } from '@/lib/appearance';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { GroupProvider, useGroups } from '@/lib/groups';
 
 SplashScreen.preventAutoHideAsync();
 
-const navTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: Palette.ink,
-    background: Palette.canvas,
-    card: Palette.canvas,
-    text: Palette.ink,
-    border: Palette.line,
-  },
-};
+// Apply the saved Light/Dark/System choice before the first screen draws.
+const appearanceReady = loadAppearance();
+
+function navTheme(scheme: 'light' | 'dark') {
+  const c = Themes[scheme];
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  return {
+    ...base,
+    colors: { ...base.colors, primary: c.text, background: c.canvas, card: c.canvas, text: c.text, border: c.line },
+  };
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -37,13 +40,18 @@ export default function RootLayout() {
     DMSans_700Bold,
     DMSans_800ExtraBold,
   });
+  const [appearanceLoaded, setAppearanceLoaded] = useState(false);
+  useEffect(() => {
+    appearanceReady.finally(() => setAppearanceLoaded(true));
+  }, []);
+  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
 
   return (
-    <ThemeProvider value={navTheme}>
-      <StatusBar style="dark" />
+    <ThemeProvider value={navTheme(scheme)}>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <AuthProvider>
         <GroupProvider>
-          <RootStack fontsReady={fontsLoaded || !!fontError} />
+          <RootStack fontsReady={(fontsLoaded || !!fontError) && appearanceLoaded} />
         </GroupProvider>
       </AuthProvider>
     </ThemeProvider>
@@ -51,6 +59,7 @@ export default function RootLayout() {
 }
 
 function RootStack({ fontsReady }: { fontsReady: boolean }) {
+  const c = useColors();
   const { session, loading: authLoading } = useAuth();
   const { groups, loading: groupsLoading } = useGroups();
   const signedIn = !!session;
@@ -76,10 +85,10 @@ function RootStack({ fontsReady }: { fontsReady: boolean }) {
       screenOptions={{
         headerBackButtonDisplayMode: 'minimal',
         headerShadowVisible: false,
-        headerTintColor: Palette.ink,
-        headerStyle: { backgroundColor: Palette.canvas },
-        headerTitleStyle: { fontFamily: Font.bold, fontSize: 17, color: Palette.ink },
-        contentStyle: { backgroundColor: Palette.canvas },
+        headerTintColor: c.text,
+        headerStyle: { backgroundColor: c.canvas },
+        headerTitleStyle: { fontFamily: Font.bold, fontSize: 17, color: c.text },
+        contentStyle: { backgroundColor: c.canvas },
       }}>
       <Stack.Protected guard={!signedIn || groupsPending}>
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />

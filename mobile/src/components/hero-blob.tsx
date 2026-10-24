@@ -1,19 +1,29 @@
 import { StyleSheet, View } from 'react-native';
 
-import { Palette } from '@/constants/theme';
+import { Bob } from '@/components/floating';
+import { Pastel } from '@/constants/theme';
 
-// The overlapping-circles motif from the Discover card, used as a header decoration.
+const CIRCLES = [
+  { size: 200, color: Pastel.lavender, pos: { top: -40, right: -50 }, ms: 5200, delay: 0 },
+  { size: 120, color: Pastel.yellow, pos: { top: 70, right: 110 }, ms: 4100, delay: 500 },
+  { size: 64, color: Pastel.salmon, pos: { top: 150, right: 60 }, ms: 3300, delay: 900 },
+  { size: 90, color: Pastel.mint, pos: { top: 20, left: -30 }, ms: 4600, delay: 300 },
+];
+
+// The overlapping-circles motif from the Discover card, used as a header decoration. Each circle
+// floats on its own rhythm.
 export function HeroBlob({ height = 220 }: { height?: number }) {
   return (
     <View style={{ height }} pointerEvents="none">
-      <View style={[styles.circle, { width: 200, height: 200, backgroundColor: Palette.lavender, top: -40, right: -50 }]} />
-      <View style={[styles.circle, { width: 120, height: 120, backgroundColor: Palette.yellow, top: 70, right: 110 }]} />
-      <View style={[styles.circle, { width: 64, height: 64, backgroundColor: Palette.salmon, top: 150, right: 60 }]} />
-      <View style={[styles.circle, { width: 90, height: 90, backgroundColor: Palette.mint, top: 20, left: -30 }]} />
+      {CIRCLES.map((c, i) => (
+        <Bob key={i} distance={10} ms={c.ms} delay={c.delay} style={[styles.circle, c.pos]}>
+          <View style={{ width: c.size, height: c.size, borderRadius: c.size / 2, backgroundColor: c.color }} />
+        </Bob>
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  circle: { position: 'absolute', borderRadius: 999 },
+  circle: { position: 'absolute' },
 });

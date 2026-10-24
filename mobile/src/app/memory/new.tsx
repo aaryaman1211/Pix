@@ -7,7 +7,7 @@ import { DateField } from '@/components/date-field';
 import { PhotoPickerStrip } from '@/components/photo-picker-strip';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Chip, ErrorText, Input } from '@/components/ui';
-import { Palette, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { toDay } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
 import { logInteraction } from '@/lib/interactions';
@@ -79,7 +79,7 @@ export default function NewMemoryScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: Palette.canvas }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <PhotoPickerStrip assets={photos} onChange={setPhotos} />
         {photos.length > 0 && (
@@ -106,9 +106,9 @@ export default function NewMemoryScreen() {
             showsHorizontalScrollIndicator={false}
             style={{ marginHorizontal: -Spacing.four }}
             contentContainerStyle={{ gap: Spacing.two, paddingHorizontal: Spacing.four }}>
-            <Chip label="Not a saved place" color={Palette.track} selected={!placeId} onPress={() => setPlaceId(null)} />
+            <Chip label="Not a saved place" tone="track" selected={!placeId} onPress={() => setPlaceId(null)} />
             {places.data?.map((p) => (
-              <Chip key={p.id} label={p.name} color={Palette.track} selected={p.id === placeId} onPress={() => setPlaceId(p.id)} />
+              <Chip key={p.id} label={p.name} tone="track" selected={p.id === placeId} onPress={() => setPlaceId(p.id)} />
             ))}
           </ScrollView>
         </View>

@@ -5,7 +5,8 @@ import { ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { DateField } from '@/components/date-field';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Chip, ErrorText, Input } from '@/components/ui';
-import { Palette, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, type Theme } from '@/constants/theme';
+import { useColors, useStyles } from '@/hooks/use-theme';
 import { toDay } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
 import { syncReminders } from '@/lib/reminders';
@@ -15,6 +16,8 @@ const SUGGESTIONS = ['Anniversary', 'Birthday', 'First date', 'The day we met'];
 
 export default function NewDateScreen() {
   const group = useActiveGroup();
+  const c = useColors();
+  const s = useStyles(makeStyles);
   const [title, setTitle] = useState('');
   const [day, setDay] = useState(toDay(new Date()));
   const [repeats, setRepeats] = useState(true);
@@ -37,19 +40,19 @@ export default function NewDateScreen() {
   }
 
   return (
-    <ScrollView style={{ backgroundColor: Palette.canvas }} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Input label="What is it?" placeholder="Anniversary" value={title} onChangeText={setTitle} maxLength={80} />
       <View style={styles.chips}>
-        {SUGGESTIONS.map((s) => (
-          <Chip key={s} label={s} color={Palette.track} selected={title === s} onPress={() => setTitle(s)} />
+        {SUGGESTIONS.map((x) => (
+          <Chip key={x} label={x} tone="track" selected={title === x} onPress={() => setTitle(x)} />
         ))}
       </View>
       <DateField label="Date" value={day} onChange={setDay} />
-      <View style={styles.row}>
+      <View style={s.row}>
         <ThemedText type="smallBold" themeColor="textSecondary" style={{ flex: 1 }}>
           Every year
         </ThemedText>
-        <Switch value={repeats} onValueChange={setRepeats} trackColor={{ true: Palette.ink }} />
+        <Switch value={repeats} onValueChange={setRepeats} trackColor={{ true: c.primary }} />
       </View>
       <ThemedText type="small" themeColor="textSecondary">
         Everyone in {group.name} gets a reminder the day before and on the day.
@@ -63,14 +66,18 @@ export default function NewDateScreen() {
 const styles = StyleSheet.create({
   container: { padding: Spacing.four, gap: Spacing.three, paddingBottom: Spacing.six },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 60,
-    backgroundColor: Palette.white,
-    borderWidth: 1,
-    borderColor: Palette.line,
-    borderRadius: Radius.field,
-    paddingHorizontal: Spacing.three + 2,
-  },
 });
+
+const makeStyles = (c: Theme) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: 60,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.line,
+      borderRadius: Radius.field,
+      paddingHorizontal: Spacing.three + 2,
+    },
+  });

@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/icon';
 import { TAB_BAR_HEIGHT, tabBarBottom } from '@/components/ui';
-import { Palette, Spacing, TabAccent } from '@/constants/theme';
+import { OnPastel, Spacing, TabAccent } from '@/constants/theme';
+import { useColors } from '@/hooks/use-theme';
 
 const TABS: Record<string, { icon: IconName; label: string; accent: string }> = {
   index: { icon: 'pin', label: 'Places', accent: TabAccent.places },
@@ -13,10 +14,17 @@ const TABS: Record<string, { icon: IconName; label: string; accent: string }> = 
   settings: { icon: 'settings', label: 'Settings', accent: TabAccent.settings },
 };
 
-// Floating black pill; the active tab sits in a circle of its own accent colour.
+// Floating pill; the active tab sits in a circle of its own accent colour.
 export function PixTabBar({ state, navigateToTab, insets }: BottomTabBarProps) {
+  const c = useColors();
   return (
-    <View style={[styles.bar, { bottom: tabBarBottom(insets.bottom) }]} accessibilityRole="tablist">
+    <View
+      style={[
+        styles.bar,
+        { bottom: tabBarBottom(insets.bottom), backgroundColor: c.tabBar },
+        c.scheme === 'dark' && { borderWidth: 1, borderColor: c.line },
+      ]}
+      accessibilityRole="tablist">
       {state.routes.map((route, i) => {
         const tab = TABS[route.name];
         if (!tab) return null;
@@ -30,7 +38,7 @@ export function PixTabBar({ state, navigateToTab, insets }: BottomTabBarProps) {
             onPress={() => !focused && navigateToTab(route.key)}
             style={styles.item}>
             <View style={[styles.circle, focused && { backgroundColor: tab.accent }]}>
-              <Icon name={tab.icon} size={22} color={focused ? Palette.ink : '#C9C9CF'} />
+              <Icon name={tab.icon} size={22} color={focused ? OnPastel.text : c.tabIcon} />
             </View>
           </Pressable>
         );
@@ -46,7 +54,6 @@ const styles = StyleSheet.create({
     right: Spacing.three,
     height: TAB_BAR_HEIGHT,
     borderRadius: TAB_BAR_HEIGHT / 2,
-    backgroundColor: Palette.ink,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
