@@ -38,7 +38,8 @@ const PRICE_LEVELS: Record<string, number> = {
   PRICE_LEVEL_VERY_EXPENSIVE: 4,
 };
 
-type AddressComponent = { longText: string; shortText?: string; types: string[] };
+// Google can omit any of these, including `types`, so treat them all as optional.
+type AddressComponent = { longText?: string; shortText?: string; types?: string[] };
 
 type GooglePlace = {
   id: string;
@@ -99,7 +100,7 @@ async function list(path: string, body: unknown): Promise<Candidate[]> {
 export function locality(components?: AddressComponent[]): string | undefined {
   if (!components) return undefined;
   for (const type of ['sublocality_level_1', 'neighborhood', 'sublocality', 'locality']) {
-    const c = components.find((x) => x.types.includes(type));
+    const c = components.find((x) => x?.types?.includes(type) && x.longText);
     if (c) return c.longText;
   }
   return undefined;
