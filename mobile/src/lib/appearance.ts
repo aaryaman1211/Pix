@@ -9,8 +9,9 @@ let current: AppearancePref = 'system';
 const listeners = new Set<(p: AppearancePref) => void>();
 
 function apply(pref: AppearancePref) {
-  // Overrides the native appearance too, so alerts, keyboards and pickers match.
-  Appearance.setColorScheme(pref === 'system' ? 'unspecified' : pref);
+  // Overrides the native appearance too, so alerts, keyboards and pickers match. React Native Web
+  // has no setColorScheme, so on web the app just follows the system.
+  Appearance.setColorScheme?.(pref === 'system' ? 'unspecified' : pref);
 }
 
 // Called once at startup, before the first screen renders.

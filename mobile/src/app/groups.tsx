@@ -6,7 +6,7 @@ import { CreateOrJoin } from '@/components/create-or-join';
 import { PastelView } from '@/components/pastel';
 import { Icon } from '@/components/icon';
 import { ThemedText } from '@/components/themed-text';
-import { Avatar, Button, Card, Chip, ErrorText } from '@/components/ui';
+import { Avatar, Button, Card, Chip, ErrorText, IconCircle, Input } from '@/components/ui';
 import { Pastel, pastelFor, Radius, Spacing, type Theme } from '@/constants/theme';
 import { useColors, useStyles } from '@/hooks/use-theme';
 import { useUserId } from '@/lib/auth';
@@ -22,8 +22,23 @@ export default function GroupsScreen() {
   const members = useMembers(active?.id);
   const [showAdd, setShowAdd] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // null when not renaming; otherwise the name being typed.
+  const [draftName, setDraftName] = useState<string | null>(null);
+  const [savingName, setSavingName] = useState(false);
 
   if (!active) return null;
+
+  async function saveName() {
+    const name = draftName?.trim() ?? '';
+    if (!name || name === active!.name) return setDraftName(null);
+    setSavingName(true);
+    setError(null);
+    const { error } = await supabase.from('groups').update({ name }).eq('id', active!.id);
+    setSavingName(false);
+    if (error) return setError(error.message);
+    await refresh();
+    setDraftName(null);
+  }
 
   function leave() {
     Alert.alert(`Leave ${active!.name}?`, 'You will lose access to its places, memories and dates.', [
@@ -71,6 +86,45 @@ export default function GroupsScreen() {
           );
         })}
       </View>
+
+      <Card style={{ gap: Spacing.two }}>
+        <ThemedText type="label" themeColor="textSecondary">
+          Group name
+        </ThemedText>
+        {draftName === null ? (
+          <View style={styles.nameRow}>
+            <ThemedText type="subtitle" style={{ flex: 1 }} numberOfLines={2}>
+              {active.name}
+            </ThemedText>
+            <IconCircle icon="pencil" label="Rename group" onPress={() => setDraftName(active.name)} />
+          </View>
+        ) : (
+          <>
+            <Input
+              value={draftName}
+              onChangeText={setDraftName}
+              maxLength={60}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={saveName}
+            />
+            <View style={styles.nameRow}>
+              <Button title="Cancel" variant="secondary" small onPress={() => setDraftName(null)} style={{ flex: 1 }} />
+              <Button
+                title="Save"
+                small
+                loading={savingName}
+                disabled={!draftName.trim()}
+                onPress={saveName}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </>
+        )}
+        <ThemedText type="small" themeColor="textSecondary">
+          Everyone in the group sees the new name.
+        </ThemedText>
+      </Card>
 
       <PastelView color={Pastel.yellow} style={styles.invite}>
         <ThemedText type="label">Invite to {active.name}</ThemedText>
@@ -124,6 +178,7 @@ const styles = StyleSheet.create({
   invite: { borderRadius: Radius.card, padding: Spacing.four, gap: Spacing.two },
   code: { fontSize: 48, lineHeight: 56, fontWeight: '800', letterSpacing: 6, marginBottom: Spacing.two },
   member: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
 });
 
 const makeStyles = (c: Theme) =>

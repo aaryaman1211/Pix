@@ -5,6 +5,7 @@ import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Bob } from '@/components/floating';
 import { Icon } from '@/components/icon';
 import { PastelView } from '@/components/pastel';
+import { PlaceDetailsSection } from '@/components/place-details';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, Button, Card, Chip, ErrorText, IconCircle, Loading, Stars } from '@/components/ui';
 import { Pastel, pastelAt, pastelFor, Radius, Spacing } from '@/constants/theme';
@@ -14,6 +15,7 @@ import { dayLabel, prettyType, priceLabel } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
 import { logInteraction } from '@/lib/interactions';
 import { useMembers } from '@/lib/members';
+import { usePlaceDetails } from '@/lib/place-details';
 import { mapsUrl } from '@/lib/places';
 import { supabase } from '@/lib/supabase';
 import type { Memory, Rating, SavedPlace } from '@/lib/types';
@@ -48,6 +50,16 @@ export default function PlaceScreen() {
 
   const place = query.data?.place;
   const placeId = place?.place_id;
+  const { details, error: detailsError } = usePlaceDetails(placeId);
+
+  // Places saved before neighbourhoods were stored pick one up the first time they're opened.
+  const savedLocality = place?.locality;
+  const savedRowId = place?.id;
+  useEffect(() => {
+    if (savedRowId && !savedLocality && details?.locality) {
+      supabase.from('saved_places').update({ locality: details.locality }).eq('id', savedRowId).then(() => {});
+    }
+  }, [savedRowId, savedLocality, details?.locality]);
   useEffect(() => {
     if (place) logInteraction(group.id, toFeatures(place), 'view', 'list');
     // Log once per place, not on every refetch.
@@ -110,7 +122,9 @@ export default function PlaceScreen() {
           ))}
         </View>
         <ThemedText style={styles.title}>{place.name}</ThemedText>
-        {place.address && <ThemedText themeColor="textSoft">{place.address}</ThemedText>}
+        {(place.locality ?? details?.locality) && (
+          <ThemedText themeColor="textSoft">{place.locality ?? details?.locality}</ThemedText>
+        )}
       </PastelView>
 
       <View style={styles.actions}>
@@ -177,6 +191,8 @@ export default function PlaceScreen() {
           ))}
         </View>
       )}
+
+      <PlaceDetailsSection details={details} error={detailsError} />
 
       <ErrorText>{error}</ErrorText>
       <Button title="Remove from list" icon="trash" variant="danger" small onPress={remove} />

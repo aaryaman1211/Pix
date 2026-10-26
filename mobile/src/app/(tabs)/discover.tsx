@@ -193,7 +193,9 @@ function PlaceCard({ item, theme }: { item: Recommendation; theme: readonly [str
       <ThemedText style={styles.name} numberOfLines={2} adjustsFontSizeToFit>
         {item.name}
       </ThemedText>
-      {rating && <ThemedText themeColor="textSoft">{rating}</ThemedText>}
+      {(rating || item.locality) && (
+        <ThemedText themeColor="textSoft">{[item.locality, rating].filter(Boolean).join(' · ')}</ThemedText>
+      )}
       <View style={styles.reason}>
         <Icon name="sparkle" size={16} />
         <ThemedText type="smallBold" numberOfLines={1} style={{ flex: 1 }}>

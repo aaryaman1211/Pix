@@ -68,3 +68,10 @@ export async function deletePhotos(photos: Pick<MemoryPhoto, 'storage_path'>[]) 
   const { error } = await supabase.storage.from(BUCKET).remove(photos.map((p) => p.storage_path));
   if (error) throw error;
 }
+
+// Removes one photo for everyone in the group: the stored copy, then its row.
+export async function deletePhoto(photo: Pick<MemoryPhoto, 'id' | 'storage_path'>) {
+  await deletePhotos([photo]);
+  const { error } = await supabase.from('memory_photos').delete().eq('id', photo.id);
+  if (error) throw error;
+}

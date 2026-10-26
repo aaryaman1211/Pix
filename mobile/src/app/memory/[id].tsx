@@ -9,7 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Button, Chip, ErrorText, IconCircle, Loading } from '@/components/ui';
 import { OnPastel, pastelFor, Radius, Spacing } from '@/constants/theme';
 import { dayLabel } from '@/lib/format';
-import { deletePhotos, pickPhotos, signedUrls, uploadPhotos } from '@/lib/photos';
+import { deletePhoto, deletePhotos, pickPhotos, signedUrls, uploadPhotos } from '@/lib/photos';
 import { supabase } from '@/lib/supabase';
 import type { Memory, MemoryPhoto } from '@/lib/types';
 import { must, useQuery } from '@/lib/use-query';
@@ -23,7 +23,8 @@ export default function MemoryScreen() {
   const insets = useSafeAreaInsets();
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [viewing, setViewing] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<MemoryPhoto | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const query = useQuery(async () => {
     const memory = must<Memory>(await supabase.from('memories').select('*').eq('id', id).single());
@@ -56,6 +57,30 @@ export default function MemoryScreen() {
     query.reload();
   }
 
+  // Ask, then delete one photo. Used from the full-screen viewer and by long-pressing a photo.
+  function removePhoto(photo: MemoryPhoto) {
+    Alert.alert('Delete this photo?', 'It will be removed for everyone in the group. The original stays in your camera roll.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          setDeleting(true);
+          setError(null);
+          try {
+            await deletePhoto(photo);
+            setViewing(null);
+            query.reload();
+          } catch (err) {
+            setError(err instanceof Error ? err.message : String(err));
+          } finally {
+            setDeleting(false);
+          }
+        },
+      },
+    ]);
+  }
+
   function remove() {
     Alert.alert('Delete this memory?', 'Its photos will be deleted for everyone in the group.', [
       { text: 'Cancel', style: 'cancel' },
@@ -79,7 +104,11 @@ export default function MemoryScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       <PastelView color={pastelFor(memory.id)} style={styles.hero}>
         {cover && (
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setViewing(cover.storage_path)} accessibilityLabel="Open photo">
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setViewing(cover)}
+            onLongPress={() => removePhoto(cover)}
+            accessibilityLabel="Open photo">
             <Image source={{ uri: urls[cover.storage_path], cacheKey: cover.storage_path }} style={StyleSheet.absoluteFill} contentFit="cover" />
           </Pressable>
         )}
@@ -90,13 +119,26 @@ export default function MemoryScreen() {
         </View>
       </PastelView>
 
-      <ThemedText type="title">{memory.title}</ThemedText>
+      <View style={styles.titleRow}>
+        <ThemedText type="title" style={{ flex: 1 }}>
+          {memory.title}
+        </ThemedText>
+        <IconCircle
+          icon="pencil"
+          label="Edit memory"
+          onPress={() => router.push({ pathname: '/memory/new', params: { editId: memory.id } })}
+        />
+      </View>
       {memory.notes && <ThemedText themeColor="textSoft" style={{ fontSize: 17, lineHeight: 25 }}>{memory.notes}</ThemedText>}
 
       {rest.length > 0 && (
         <View style={styles.grid}>
           {rest.map((p) => (
-            <Pressable key={p.id} onPress={() => setViewing(p.storage_path)} accessibilityLabel="Open photo">
+            <Pressable
+              key={p.id}
+              onPress={() => setViewing(p)}
+              onLongPress={() => removePhoto(p)}
+              accessibilityLabel="Open photo">
               <Image
                 source={{ uri: urls[p.storage_path], cacheKey: p.storage_path }}
                 style={{ width: tile, height: tile * 1.2, borderRadius: Radius.tile - 6 }}
@@ -108,6 +150,11 @@ export default function MemoryScreen() {
         </View>
       )}
 
+      {photos.length > 0 && (
+        <ThemedText type="small" themeColor="textMuted">
+          Tap a photo to view it. Press and hold to delete it.
+        </ThemedText>
+      )}
       <ErrorText>{error}</ErrorText>
       <Button
         title={uploading ?? (photos.length ? 'Add more photos' : 'Add photos')}
@@ -121,9 +168,20 @@ export default function MemoryScreen() {
       <Modal visible={!!viewing} animationType="fade" onRequestClose={() => setViewing(null)}>
         <View style={styles.viewer}>
           {viewing && (
-            <Image source={{ uri: urls[viewing], cacheKey: viewing }} style={StyleSheet.absoluteFill} contentFit="contain" />
+            <Image
+              source={{ uri: urls[viewing.storage_path], cacheKey: viewing.storage_path }}
+              style={StyleSheet.absoluteFill}
+              contentFit="contain"
+            />
           )}
-          <View style={[styles.viewerClose, { top: insets.top + Spacing.two }]}>
+          <View style={[styles.viewerBar, { top: insets.top + Spacing.two }]}>
+            <IconCircle
+              icon="trash"
+              label="Delete photo"
+              color={OnPastel.chip}
+              iconColor={OnPastel.text}
+              onPress={() => viewing && !deleting && removePhoto(viewing)}
+            />
             <IconCircle icon="close" label="Close photo" color={OnPastel.chip} iconColor={OnPastel.text} onPress={() => setViewing(null)} />
           </View>
         </View>
@@ -138,5 +196,6 @@ const styles = StyleSheet.create({
   hero: { height: 340, borderRadius: Radius.card, padding: Spacing.three, overflow: 'hidden' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
   viewer: { flex: 1, backgroundColor: '#000' },
-  viewerClose: { position: 'absolute', right: Spacing.three },
+  viewerBar: { position: 'absolute', left: Spacing.three, right: Spacing.three, flexDirection: 'row', justifyContent: 'space-between' },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.three },
 });

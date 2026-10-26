@@ -22,6 +22,8 @@ const ICONS = {
   map: { ios: 'map', android: 'map' },
   share: { ios: 'square.and.arrow.up', android: 'share' },
   trash: { ios: 'trash', android: 'delete' },
+  pencil: { ios: 'pencil', android: 'edit' },
+  globe: { ios: 'globe', android: 'language' },
   sun: { ios: 'sun.max', android: 'light_mode' },
   moon: { ios: 'moon', android: 'dark_mode' },
   phone: { ios: 'iphone', android: 'smartphone' },

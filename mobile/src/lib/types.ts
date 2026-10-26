@@ -22,6 +22,7 @@ export type SavedPlace = {
   place_id: string;
   name: string;
   address: string | null;
+  locality: string | null;
   primary_type: string | null;
   types: string[];
   price_level: number | null;
@@ -76,6 +77,7 @@ export type PlaceResult = {
   placeId: string;
   name: string;
   address?: string;
+  locality?: string;
   lat: number;
   lng: number;
   primaryType?: string;
@@ -93,3 +95,17 @@ export type Recommendation = PlaceResult & {
 
 export type InteractionAction = 'shown' | 'view' | 'save' | 'unsave' | 'dismiss' | 'visit' | 'rate';
 export type InteractionSource = 'search' | 'recommend' | 'list';
+
+// From the place-details edge function, fetched when a place is opened.
+export type PlaceDetails = {
+  placeId: string;
+  address?: string;
+  locality?: string;
+  phone?: string;
+  website?: string;
+  mapsUrl?: string;
+  openNow?: boolean;
+  hours?: string[];
+  summary?: string;
+  reviews: { author: string; authorUrl?: string; rating?: number; when?: string; text: string }[];
+};

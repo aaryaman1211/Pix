@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
+import { LaunchAnimation } from '@/components/launch-animation';
 import { Font, Themes } from '@/constants/theme';
 import { useColors } from '@/hooks/use-theme';
 import { loadAppearance } from '@/lib/appearance';
@@ -22,6 +23,10 @@ SplashScreen.preventAutoHideAsync();
 
 // Apply the saved Light/Dark/System choice before the first screen draws.
 const appearanceReady = loadAppearance();
+
+// The launch animation plays once per JS start, i.e. only when the app was fully closed, not when
+// it comes back from the background.
+let launchPlayed = false;
 
 function navTheme(scheme: 'light' | 'dark') {
   const c = Themes[scheme];
@@ -78,35 +83,45 @@ function RootStack({ fontsReady }: { fontsReady: boolean }) {
     }
   }, [ready, booted]);
 
+  const [launching, setLaunching] = useState(!launchPlayed);
+  const endLaunch = () => {
+    launchPlayed = true;
+    setLaunching(false);
+  };
+
   if (!booted) return null;
 
   return (
-    <Stack
-      screenOptions={{
-        headerBackButtonDisplayMode: 'minimal',
-        headerShadowVisible: false,
-        headerTintColor: c.text,
-        headerStyle: { backgroundColor: c.canvas },
-        headerTitleStyle: { fontFamily: Font.bold, fontSize: 17, color: c.text },
-        contentStyle: { backgroundColor: c.canvas },
-      }}>
-      <Stack.Protected guard={!signedIn || groupsPending}>
-        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
-      </Stack.Protected>
+    <>
+      <Stack
+        screenOptions={{
+          headerBackButtonDisplayMode: 'minimal',
+          headerShadowVisible: false,
+          headerTintColor: c.text,
+          headerStyle: { backgroundColor: c.canvas },
+          headerTitleStyle: { fontFamily: Font.bold, fontSize: 17, color: c.text },
+          contentStyle: { backgroundColor: c.canvas },
+        }}>
+        <Stack.Protected guard={!signedIn || groupsPending}>
+          <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+        </Stack.Protected>
 
-      <Stack.Protected guard={signedIn && !groupsPending && !hasGroup}>
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-      </Stack.Protected>
+        <Stack.Protected guard={signedIn && !groupsPending && !hasGroup}>
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        </Stack.Protected>
 
-      <Stack.Protected guard={signedIn && !groupsPending && hasGroup}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="search" options={{ presentation: 'modal', title: 'Find a place' }} />
-        <Stack.Screen name="place/[id]" options={{ title: '' }} />
-        <Stack.Screen name="memory/new" options={{ presentation: 'modal', title: 'New memory' }} />
-        <Stack.Screen name="memory/[id]" options={{ title: '' }} />
-        <Stack.Screen name="date/new" options={{ presentation: 'modal', title: 'Important date' }} />
-        <Stack.Screen name="groups" options={{ presentation: 'modal', title: 'Your groups' }} />
-      </Stack.Protected>
-    </Stack>
+        <Stack.Protected guard={signedIn && !groupsPending && hasGroup}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="search" options={{ presentation: 'modal', title: 'Find a place' }} />
+          <Stack.Screen name="place/[id]" options={{ title: '' }} />
+          <Stack.Screen name="place/preview" options={{ title: '' }} />
+          <Stack.Screen name="memory/new" options={{ presentation: 'modal', title: 'New memory' }} />
+          <Stack.Screen name="memory/[id]" options={{ title: '' }} />
+          <Stack.Screen name="date/new" options={{ presentation: 'modal', title: 'Important date' }} />
+          <Stack.Screen name="groups" options={{ presentation: 'modal', title: 'Your groups' }} />
+        </Stack.Protected>
+      </Stack>
+      {launching && <LaunchAnimation onDone={endLaunch} />}
+    </>
   );
 }

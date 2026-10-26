@@ -8,6 +8,7 @@ export async function addPlace(groupId: string, place: PlaceResult): Promise<str
     place_id: place.placeId,
     name: place.name,
     address: place.address ?? null,
+    locality: place.locality ?? null,
     primary_type: place.primaryType ?? null,
     types: place.types,
     price_level: place.priceLevel ?? null,

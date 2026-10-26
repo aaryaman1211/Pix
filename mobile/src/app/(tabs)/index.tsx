@@ -92,6 +92,7 @@ export default function PlacesScreen() {
               type={item.primary_type}
               priceLevel={item.price_level}
               distance={distance}
+              subtitle={item.locality}
               color={color}
               right={adder ? <InitialBadge initial={adder.initial} /> : null}
               onPress={() => router.push({ pathname: '/place/[id]', params: { id: item.id, color } })}

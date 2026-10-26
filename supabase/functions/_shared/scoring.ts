@@ -7,6 +7,7 @@ export type Candidate = {
   placeId: string;
   name: string;
   address?: string;
+  locality?: string; // neighbourhood, e.g. "Bandra West"
   lat: number;
   lng: number;
   primaryType?: string;

@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, StyleSheet, TextInput, View } from 'react-native';
 
@@ -48,7 +49,6 @@ export default function SearchScreen() {
         query: query.trim(),
         lat: coords.lat,
         lng: coords.lng,
-        radiusM: group.search_radius_m,
       });
       setResults(data.results);
     } catch (err) {
@@ -107,7 +107,7 @@ export default function SearchScreen() {
             <Empty color={Pastel.sky} title="No matches" body="Try a different name or a broader search." />
           ) : (
             <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', marginTop: Spacing.three }}>
-              Searching within {group.search_radius_m / 1000} km of {pref?.mode === 'custom' ? pref.label : 'you'}
+              Searching within 50 km of {pref?.mode === 'custom' ? pref.label : 'you'}. Tap a result for its address and reviews.
             </ThemedText>
           )
         }
@@ -120,7 +120,8 @@ export default function SearchScreen() {
               priceLevel={item.priceLevel}
               rating={item.rating}
               distance={coords ? distanceLabel(distanceMeters(coords, item)) : null}
-              subtitle={item.address}
+              subtitle={item.locality}
+              onPress={() => router.push({ pathname: '/place/preview', params: { data: JSON.stringify(item) } })}
               right={
                 <Button
                   title={isSaved ? 'Saved' : 'Add'}
