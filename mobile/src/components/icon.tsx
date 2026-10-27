@@ -27,6 +27,8 @@ const ICONS = {
   sun: { ios: 'sun.max', android: 'light_mode' },
   moon: { ios: 'moon', android: 'dark_mode' },
   phone: { ios: 'iphone', android: 'smartphone' },
+  grid: { ios: 'square.grid.2x2', android: 'grid_view' },
+  laptop: { ios: 'laptopcomputer', android: 'laptop_mac' },
 } as const;
 
 export type IconName = keyof typeof ICONS;

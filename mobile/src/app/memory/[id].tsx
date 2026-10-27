@@ -1,13 +1,15 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/icon';
 import { PastelView } from '@/components/pastel';
+import { PhotoBooth } from '@/components/photo-booth';
 import { ThemedText } from '@/components/themed-text';
-import { Button, Chip, ErrorText, IconCircle, Loading } from '@/components/ui';
+import { Button, Chip, ErrorText, IconCircle, Loading, Segmented } from '@/components/ui';
 import { OnPastel, pastelFor, Radius, Spacing } from '@/constants/theme';
 import { useColors } from '@/hooks/use-theme';
 import { dayLabel } from '@/lib/format';
@@ -18,6 +20,10 @@ import { must, useQuery } from '@/lib/use-query';
 
 const COLUMNS = 2;
 const GAP = Spacing.two;
+
+// How the photos are laid out: the usual grid, or a MacBook running Photo Booth. Remembered across memories.
+type PhotoView = 'grid' | 'booth';
+const VIEW_KEY = 'pix.memoryPhotoView';
 
 export default function MemoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,6 +37,18 @@ export default function MemoryScreen() {
   // Select mode: tap photos to pick them, then delete them or make one the cover.
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [view, setView] = useState<PhotoView>('grid');
+
+  useEffect(() => {
+    AsyncStorage.getItem(VIEW_KEY).then((v) => {
+      if (v === 'grid' || v === 'booth') setView(v);
+    });
+  }, []);
+
+  function changeView(v: PhotoView) {
+    setView(v);
+    AsyncStorage.setItem(VIEW_KEY, v);
+  }
 
   const query = useQuery(async () => {
     const memory = must<Memory>(await supabase.from('memories').select('*').eq('id', id).single());
@@ -69,6 +87,8 @@ export default function MemoryScreen() {
   // Normally the cover is the big photo on top and the grid holds the rest; when selecting, every
   // photo (cover included) is in the grid so any of them can be picked.
   const gridPhotos = selecting ? photos : photos.filter((p) => p !== cover);
+  // Select mode always uses the grid so photos can be picked.
+  const booth = view === 'booth' && !selecting && photos.length > 0;
 
   function stopSelecting() {
     setSelecting(false);
@@ -207,7 +227,32 @@ export default function MemoryScreen() {
           </ThemedText>
         )}
 
-        {gridPhotos.length > 0 && (
+        {!selecting && photos.length > 0 && (
+          <View style={styles.viewRow}>
+            <ThemedText type="smallBold" themeColor="textMuted">
+              {photos.length} {photos.length === 1 ? 'photo' : 'photos'}
+            </ThemedText>
+            <Segmented<PhotoView>
+              value={view}
+              onChange={changeView}
+              options={[
+                { value: 'grid', label: 'Grid', icon: 'grid' },
+                { value: 'booth', label: 'Photo Booth', icon: 'laptop' },
+              ]}
+            />
+          </View>
+        )}
+
+        {booth && (
+          <>
+            <PhotoBooth key={memory.id} photos={photos} urls={urls} initialId={cover?.id} onOpen={setViewing} />
+            <ThemedText type="small" themeColor="textMuted" style={{ textAlign: 'center' }}>
+              Tap a photo on the strip to put it on screen. Tap the screen to see it full size.
+            </ThemedText>
+          </>
+        )}
+
+        {!booth && gridPhotos.length > 0 && (
           <View style={styles.grid}>
             {gridPhotos.map((p) => {
               const isSelected = selected.has(p.id);
@@ -352,4 +397,5 @@ const styles = StyleSheet.create({
   viewerBar: { position: 'absolute', left: Spacing.three, right: Spacing.three, flexDirection: 'row', justifyContent: 'space-between' },
   viewerActions: { position: 'absolute', left: Spacing.three, right: Spacing.three, flexDirection: 'row', gap: Spacing.two },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.three },
+  viewRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two },
 });
