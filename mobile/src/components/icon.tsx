@@ -29,6 +29,7 @@ const ICONS = {
   moon: { ios: 'moon', android: 'dark_mode' },
   phone: { ios: 'iphone', android: 'smartphone' },
   grid: { ios: 'square.grid.2x2', android: 'grid_view' },
+  camera: { ios: 'camera.fill', android: 'photo_camera' },
   laptop: { ios: 'laptopcomputer', android: 'laptop_mac' },
 } as const;
 

@@ -2,18 +2,18 @@ import { Image } from 'expo-image';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 
-import { Radius } from '@/constants/theme';
-import { useColors } from '@/hooks/use-theme';
+import { Icon } from '@/components/icon';
 import type { MemoryPhoto } from '@/lib/types';
 
-// Photo Booth view: the current photo is shown big, every photo sits on a strip below it, and
-// tapping a thumbnail brings that photo up (with a little camera flash).
+// Looks like the Mac Photo Booth window: traffic-light title bar, the current photo on a black
+// stage, a strip of every photo, and the bottom control bar (view modes, red camera button,
+// Effects). Tapping a thumbnail brings that photo up (with a little camera flash).
 // Tapping the big photo calls `onOpen` so the caller can show it full screen.
 
 const THUMB_W = 64;
 const THUMB_H = 48;
 const THUMB_GAP = 8;
-const STRIP_PAD = 4;
+const STRIP_PAD = 10;
 
 export function PhotoBooth({
   photos,
@@ -26,7 +26,6 @@ export function PhotoBooth({
   initialId?: string;
   onOpen?: (photo: MemoryPhoto) => void;
 }) {
-  const c = useColors();
   const [currentId, setCurrentId] = useState(initialId ?? photos[0]?.id);
   const [stripWidth, setStripWidth] = useState(0);
   const strip = useRef<ScrollViewInstance>(null);
@@ -55,21 +54,22 @@ export function PhotoBooth({
   const uri = urls[current.storage_path];
 
   return (
-    <View style={styles.wrap}>
+    <View style={styles.window}>
+      <View style={styles.titleBar}>
+        <View style={styles.lights}>
+          <View style={[styles.light, { backgroundColor: '#FF5F57' }]} />
+          <View style={[styles.light, { backgroundColor: '#FEBC2E' }]} />
+          <View style={[styles.light, { backgroundColor: '#28C840' }]} />
+        </View>
+        <Text style={styles.title}>Photo Booth</Text>
+      </View>
+
       <Pressable
         style={styles.stage}
         onPress={() => onOpen?.(current)}
         accessibilityRole="imagebutton"
         accessibilityLabel={`Photo ${index + 1} of ${photos.length}. Tap to view full size.`}>
-        {/* Blurred copy fills the frame so any aspect ratio looks good; the sharp copy is contained on top. */}
-        <Image
-          source={{ uri, cacheKey: current.storage_path }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          blurRadius={28}
-          transition={250}
-        />
-        <View style={[StyleSheet.absoluteFill, styles.dim]} />
+        {/* Solid black behind the photo, so portrait photos get black bars. */}
         <Image
           source={{ uri, cacheKey: current.storage_path }}
           style={StyleSheet.absoluteFill}
@@ -84,7 +84,7 @@ export function PhotoBooth({
         </View>
       </Pressable>
 
-      <View onLayout={(e) => setStripWidth(e.nativeEvent.layout.width)}>
+      <View style={styles.filmStrip} onLayout={(e) => setStripWidth(e.nativeEvent.layout.width)}>
         <ScrollView
           ref={strip}
           horizontal
@@ -101,7 +101,7 @@ export function PhotoBooth({
                 accessibilityState={{ selected: active }}
                 style={({ pressed }) => [
                   styles.thumbFrame,
-                  active && { borderColor: c.primary },
+                  active && styles.thumbFrameActive,
                   pressed && { transform: [{ scale: 0.94 }] },
                 ]}>
                 <Image
@@ -115,14 +115,43 @@ export function PhotoBooth({
           })}
         </ScrollView>
       </View>
+
+      <View style={styles.controls}>
+        <View style={styles.controlSide}>
+          <View style={[styles.modeBtn, styles.modeBtnActive]}>
+            <Icon name="photo" size={16} color="#FFFFFF" />
+          </View>
+          <View style={styles.modeBtn}>
+            <Icon name="grid" size={16} color="#C7C7CC" />
+          </View>
+        </View>
+        <View style={styles.shutter} accessibilityElementsHidden importantForAccessibility="no">
+          <Icon name="camera" size={22} color="#FFFFFF" />
+        </View>
+        <View style={[styles.controlSide, { justifyContent: 'flex-end' }]}>
+          <View style={styles.effects}>
+            <Icon name="sparkle" size={14} color="#C7C7CC" />
+            <Text style={styles.effectsText}>Effects</Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 10 },
-  stage: { aspectRatio: 4 / 3, backgroundColor: '#000', overflow: 'hidden', borderRadius: Radius.card },
-  dim: { backgroundColor: 'rgba(0,0,0,0.25)' },
+  window: {
+    backgroundColor: '#1B1B1D',
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#4A4A4E',
+  },
+  titleBar: { height: 28, backgroundColor: '#2A2A2D', justifyContent: 'center' },
+  lights: { position: 'absolute', left: 10, flexDirection: 'row', gap: 6 },
+  light: { width: 11, height: 11, borderRadius: 6 },
+  title: { textAlign: 'center', color: '#C7C7CC', fontSize: 12, fontWeight: '600' },
+  stage: { aspectRatio: 4 / 3, backgroundColor: '#000', overflow: 'hidden' },
   flash: { backgroundColor: '#FFFFFF' },
   counter: {
     position: 'absolute',
@@ -134,7 +163,33 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   counterText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  stripContent: { paddingHorizontal: STRIP_PAD, paddingVertical: 4, gap: THUMB_GAP },
-  thumbFrame: { borderRadius: 8, borderWidth: 2, borderColor: 'transparent', padding: 1 },
-  thumb: { width: THUMB_W - 6, height: THUMB_H - 6, borderRadius: 5, backgroundColor: '#111' },
+  filmStrip: { backgroundColor: '#232326', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#3A3A3E' },
+  stripContent: { paddingHorizontal: STRIP_PAD, paddingVertical: 8, gap: THUMB_GAP },
+  thumbFrame: { borderRadius: 6, borderWidth: 2, borderColor: 'transparent', padding: 1 },
+  thumbFrameActive: { borderColor: '#FFFFFF' },
+  thumb: { width: THUMB_W - 6, height: THUMB_H - 6, borderRadius: 3, backgroundColor: '#111' },
+  controls: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    backgroundColor: '#2C2C2F',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#3A3A3E',
+  },
+  controlSide: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  modeBtn: { width: 30, height: 26, borderRadius: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: '#3A3A3E' },
+  modeBtnActive: { backgroundColor: '#5A5A60' },
+  shutter: {
+    width: 52,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#E5322D',
+    borderWidth: 1,
+    borderColor: '#FF6A66',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  effects: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 26, paddingHorizontal: 10, borderRadius: 6, backgroundColor: '#3A3A3E' },
+  effectsText: { color: '#C7C7CC', fontSize: 12, fontWeight: '600' },
 });
