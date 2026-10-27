@@ -11,11 +11,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Icon } from '@/components/icon';
 import { Pastel } from '@/constants/theme';
 import { useColors } from '@/hooks/use-theme';
 
-type Shape = 'circle' | 'squircle' | 'pill' | 'ring' | 'half' | 'sparkle';
+type Shape = 'circle' | 'squircle' | 'pill' | 'ring' | 'half' | 'cross';
 
 // One shape drifting across the screen. x and y move on separate timers so the path wanders
 // instead of tracing a straight line; non-round shapes also turn slowly. Positions are fractions
@@ -37,10 +36,10 @@ const DRIFTS: Drift[] = [
   { shape: 'squircle', size: 150, color: Pastel.yellow, x: [0.05, 0.85], y: [0.55, 0.28], xMs: 22000, yMs: 27000, delay: 600, spinMs: 40000 },
   { shape: 'pill', size: 170, color: Pastel.lavender, x: [0.7, 0.15], y: [0.85, 0.6], xMs: 18000, yMs: 23000, delay: 1200, spinMs: -52000 },
   { shape: 'ring', size: 110, color: Pastel.mint, x: [0.25, 0.8], y: [0.2, 0.75], xMs: 15000, yMs: 31000, delay: 300 },
-  { shape: 'sparkle', size: 80, color: Pastel.sky, x: [0.95, 0.45], y: [0.95, 0.45], xMs: 20000, yMs: 17000, delay: 900, spinMs: 24000 },
+  { shape: 'cross', size: 80, color: Pastel.sky, x: [0.95, 0.45], y: [0.95, 0.45], xMs: 20000, yMs: 17000, delay: 900, spinMs: 24000 },
   { shape: 'half', size: 120, color: Pastel.salmon, x: [0.15, 0.6], y: [0.7, 0.92], xMs: 24000, yMs: 16000, delay: 1800, spinMs: -36000 },
   { shape: 'circle', size: 60, color: Pastel.yellow, x: [0.1, 0.55], y: [0.42, 0.08], xMs: 13000, yMs: 21000, delay: 1500 },
-  { shape: 'sparkle', size: 46, color: Pastel.lavender, x: [0.55, 0.9], y: [0.15, 0.5], xMs: 17000, yMs: 25000, delay: 2400, spinMs: -18000 },
+  { shape: 'cross', size: 46, color: Pastel.lavender, x: [0.55, 0.9], y: [0.15, 0.5], xMs: 17000, yMs: 25000, delay: 2400, spinMs: -18000 },
 ];
 
 const ease = Easing.inOut(Easing.sin);
@@ -63,8 +62,16 @@ function box(d: Drift): [number, number] {
 function ShapeView({ d }: { d: Drift }) {
   const [w, h] = box(d);
   switch (d.shape) {
-    case 'sparkle':
-      return <Icon name="sparkle" size={d.size} color={d.color} />;
+    case 'cross': {
+      // A plain plus sign: two rounded bars.
+      const bar = w * 0.3;
+      return (
+        <View style={{ width: w, height: h }}>
+          <View style={{ position: 'absolute', left: (w - bar) / 2, top: 0, width: bar, height: h, borderRadius: bar / 2, backgroundColor: d.color }} />
+          <View style={{ position: 'absolute', top: (h - bar) / 2, left: 0, width: w, height: bar, borderRadius: bar / 2, backgroundColor: d.color }} />
+        </View>
+      );
+    }
     case 'ring':
       return <View style={{ width: w, height: h, borderRadius: w / 2, borderWidth: w * 0.17, borderColor: d.color }} />;
     case 'half':

@@ -40,7 +40,10 @@ export default function NewDateScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive">
       <Input label="What is it?" placeholder="Anniversary" value={title} onChangeText={setTitle} maxLength={80} />
       <View style={styles.chips}>
         {SUGGESTIONS.map((x) => (

@@ -7,22 +7,33 @@ import {
   useFonts,
 } from '@expo-google-fonts/dm-sans';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { KeyboardDoneBar } from '@/components/keyboard-done';
 import { LaunchAnimation } from '@/components/launch-animation';
 import { Font, Themes } from '@/constants/theme';
 import { useColors } from '@/hooks/use-theme';
 import { loadAppearance } from '@/lib/appearance';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { GroupProvider, useGroups } from '@/lib/groups';
+import { registerForPush } from '@/lib/push';
+import { syncReminders } from '@/lib/reminders';
+import { syncThrowbacks } from '@/lib/throwbacks';
 
 SplashScreen.preventAutoHideAsync();
 
 // Apply the saved Light/Dark/System choice before the first screen draws.
 const appearanceReady = loadAppearance();
+
+// Notification taps only exist on phones; web has no last-response API at all.
+const useLastNotificationResponse =
+  Platform.OS === 'web' ? () => null : Notifications.useLastNotificationResponse;
 
 // The launch animation plays once per JS start, i.e. only when the app was fully closed, not when
 // it comes back from the background.
@@ -52,6 +63,7 @@ export default function RootLayout() {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <ThemeProvider value={navTheme(scheme)}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <AuthProvider>
@@ -60,6 +72,7 @@ export default function RootLayout() {
         </GroupProvider>
       </AuthProvider>
     </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -82,6 +95,28 @@ function RootStack({ fontsReady }: { fontsReady: boolean }) {
       SplashScreen.hideAsync();
     }
   }, [ready, booted]);
+
+  // Once signed in, (re)schedule this phone's date reminders and photo throwbacks.
+  const inApp = booted && signedIn && !groupsPending && hasGroup;
+  useEffect(() => {
+    if (!inApp) return;
+    syncReminders().catch(console.warn);
+    syncThrowbacks().catch(console.warn);
+    registerForPush().catch(console.warn);
+  }, [inApp]);
+
+  // Tapping a notification opens what it's about.
+  const response = useLastNotificationResponse();
+  useEffect(() => {
+    if (!inApp || !response) return;
+    const data = response.notification.request.content.data as { memoryId?: string; tab?: string; placeRowId?: string };
+    if (data?.memoryId) router.push({ pathname: '/memory/[id]', params: { id: data.memoryId } });
+    else if (data?.placeRowId) router.push({ pathname: '/place/[id]', params: { id: data.placeRowId } });
+    else if (data?.tab === 'memories') router.navigate('/memories');
+    else if (data?.tab === 'dates') router.navigate('/dates');
+    else if (data?.tab === 'places') router.navigate('/');
+    Notifications.clearLastNotificationResponse();
+  }, [inApp, response]);
 
   const [launching, setLaunching] = useState(!launchPlayed);
   const endLaunch = () => {
@@ -121,6 +156,7 @@ function RootStack({ fontsReady }: { fontsReady: boolean }) {
           <Stack.Screen name="groups" options={{ presentation: 'modal', title: 'Your groups' }} />
         </Stack.Protected>
       </Stack>
+      <KeyboardDoneBar />
       {launching && <LaunchAnimation onDone={endLaunch} />}
     </>
   );

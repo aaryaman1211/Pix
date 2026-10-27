@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Bob } from '@/components/floating';
+import { KEYBOARD_DONE_ID } from '@/components/keyboard-done';
 import { Icon, type IconName } from '@/components/icon';
 import { PastelScope, PastelView, usePastel } from '@/components/pastel';
 import { ThemedText, useTextColor } from '@/components/themed-text';
@@ -277,6 +278,7 @@ export function Input({ label, style, ...rest }: TextInputProps & { label?: stri
       <TextInput
         placeholderTextColor={onPastel ? OnPastel.muted : c.textMuted}
         keyboardAppearance={onPastel ? 'light' : c.scheme}
+        inputAccessoryViewID={KEYBOARD_DONE_ID}
         style={[
           s.input,
           onPastel && { backgroundColor: OnPastel.chip, color: OnPastel.text, borderColor: 'transparent' },

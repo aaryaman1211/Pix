@@ -1,6 +1,7 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
+import { KEYBOARD_DONE_ID } from '@/components/keyboard-done';
 import { ThemedText } from '@/components/themed-text';
 import { Font, Radius, Spacing, type Theme } from '@/constants/theme';
 import { useColors, useStyles } from '@/hooks/use-theme';
@@ -20,6 +21,7 @@ export function DateField({ label, value, onChange }: { label: string; value: st
           defaultValue={value}
           onChangeText={(t) => /^\d{4}-\d{2}-\d{2}$/.test(t) && onChange(t)}
           placeholder="YYYY-MM-DD"
+          inputAccessoryViewID={KEYBOARD_DONE_ID}
           style={[s.pill, { fontFamily: Font.semibold, color: c.text }]}
         />
       ) : Platform.OS === 'ios' ? (

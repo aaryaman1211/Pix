@@ -55,6 +55,11 @@ export async function uploadPhotos(
   }
 }
 
+// The memory's chosen cover, or its first photo when none is chosen (or the chosen one is gone).
+export function pickCover<T extends { id: string }>(photos: T[], coverId: string | null | undefined): T | undefined {
+  return photos.find((p) => p.id === coverId) ?? photos[0];
+}
+
 // Returns storage_path -> signed URL. The bucket is private, so URLs expire.
 export async function signedUrls(paths: string[]): Promise<Record<string, string>> {
   if (paths.length === 0) return {};
@@ -66,12 +71,5 @@ export async function signedUrls(paths: string[]): Promise<Record<string, string
 export async function deletePhotos(photos: Pick<MemoryPhoto, 'storage_path'>[]) {
   if (photos.length === 0) return;
   const { error } = await supabase.storage.from(BUCKET).remove(photos.map((p) => p.storage_path));
-  if (error) throw error;
-}
-
-// Removes one photo for everyone in the group: the stored copy, then its row.
-export async function deletePhoto(photo: Pick<MemoryPhoto, 'id' | 'storage_path'>) {
-  await deletePhotos([photo]);
-  const { error } = await supabase.from('memory_photos').delete().eq('id', photo.id);
   if (error) throw error;
 }

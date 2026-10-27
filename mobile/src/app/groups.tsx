@@ -12,6 +12,7 @@ import { useColors, useStyles } from '@/hooks/use-theme';
 import { useUserId } from '@/lib/auth';
 import { useGroups } from '@/lib/groups';
 import { invalidateMembers, useMembers } from '@/lib/members';
+import { signOut } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
 
 export default function GroupsScreen() {
@@ -63,7 +64,10 @@ export default function GroupsScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive">
       <View style={{ gap: Spacing.two }}>
         {groups.map((g) => {
           const selected = g.id === active.id;
@@ -166,7 +170,7 @@ export default function GroupsScreen() {
 
       <View style={{ gap: Spacing.two, marginTop: Spacing.four }}>
         <Button title="Leave group" variant="danger" onPress={leave} />
-        <Button title="Sign out" variant="secondary" onPress={() => supabase.auth.signOut()} />
+        <Button title="Sign out" variant="secondary" onPress={signOut} />
       </View>
     </ScrollView>
   );

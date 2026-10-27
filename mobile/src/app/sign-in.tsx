@@ -57,7 +57,8 @@ export default function SignInScreen() {
       <FloatingBlobs strength={0.8} />
       <ScrollView
         contentContainerStyle={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + Spacing.four }]}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive">
         <HeroBlob />
         <View style={{ gap: Spacing.two, marginBottom: Spacing.three }}>
           <ThemedText style={styles.logo}>Pix</ThemedText>

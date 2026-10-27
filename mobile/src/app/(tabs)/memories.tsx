@@ -9,12 +9,12 @@ import { Button, Empty, ErrorText, Fab, TabHeader, useTabBarSpace } from '@/comp
 import { OnPastel, Pastel, pastelAt, Radius, Spacing } from '@/constants/theme';
 import { parseDay } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
-import { signedUrls } from '@/lib/photos';
+import { pickCover, signedUrls } from '@/lib/photos';
 import { supabase } from '@/lib/supabase';
 import type { Memory } from '@/lib/types';
 import { must, useQuery } from '@/lib/use-query';
 
-type MemoryWithCover = Memory & { memory_photos: { storage_path: string }[] };
+type MemoryWithCover = Memory & { memory_photos: { id: string; storage_path: string }[] };
 
 const TALL = 230;
 const SHORT = 165;
@@ -27,16 +27,17 @@ export default function MemoriesScreen() {
     const [memories, photoCount] = await Promise.all([
       supabase
         .from('memories')
-        .select('*, memory_photos(storage_path)')
+        .select('*, memory_photos(id, storage_path)')
         .eq('group_id', group.id)
         .order('happened_on', { ascending: false })
         .order('created_at', { referencedTable: 'memory_photos' })
-        .limit(1, { referencedTable: 'memory_photos' })
         .returns<MemoryWithCover[]>(),
       supabase.from('memory_photos').select('id', { count: 'exact', head: true }).eq('group_id', group.id),
     ]);
     const list = must<MemoryWithCover[]>(memories);
-    const covers = await signedUrls(list.flatMap((m) => m.memory_photos.map((p) => p.storage_path)));
+    const covers = await signedUrls(
+      list.flatMap((m) => pickCover(m.memory_photos, m.cover_photo_id)?.storage_path ?? []),
+    );
     return { memories: list, covers, photos: photoCount.count ?? 0 };
   }, [group.id]);
 
@@ -71,7 +72,7 @@ export default function MemoriesScreen() {
           <ErrorText>{query.error}</ErrorText>
 
           {onThisDay.map((m) => {
-            const cover = m.memory_photos[0]?.storage_path;
+            const cover = pickCover(m.memory_photos, m.cover_photo_id)?.storage_path;
             const years = today.getFullYear() - parseDay(m.happened_on).getFullYear();
             return (
               <PastelScope key={m.id}>
@@ -107,7 +108,7 @@ export default function MemoriesScreen() {
               {columns.map((col, c) => (
                 <View key={c} style={styles.column}>
                   {col.map(({ item, index, height }) => {
-                    const cover = item.memory_photos[0]?.storage_path;
+                    const cover = pickCover(item.memory_photos, item.cover_photo_id)?.storage_path;
                     const date = parseDay(item.happened_on).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
                     return (
                       <PastelScope key={item.id}>

@@ -12,6 +12,7 @@ import { toDay } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
 import { logInteraction } from '@/lib/interactions';
 import { uploadPhotos } from '@/lib/photos';
+import { syncThrowbacks } from '@/lib/throwbacks';
 import { supabase } from '@/lib/supabase';
 import type { Memory, SavedPlace } from '@/lib/types';
 import { must, useQuery } from '@/lib/use-query';
@@ -116,6 +117,7 @@ export default function NewMemoryScreen() {
       }
 
       await markVisited();
+      syncThrowbacks().catch(console.warn);
       router.replace({ pathname: '/memory/[id]', params: { id: memory.id } });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -142,7 +144,10 @@ export default function NewMemoryScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive">
         {editId && <Stack.Screen options={{ title: 'Edit memory' }} />}
         {!editId && <PhotoPickerStrip assets={photos} onChange={setPhotos} />}
         {!editId && photos.length > 0 && (

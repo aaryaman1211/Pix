@@ -7,6 +7,7 @@ import { HeroBlob } from '@/components/hero-blob';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
+import { signOut } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
 
 export default function OnboardingScreen() {
@@ -16,7 +17,8 @@ export default function OnboardingScreen() {
       <FloatingBlobs strength={0.8} />
       <ScrollView
         contentContainerStyle={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + Spacing.four }]}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive">
         <HeroBlob height={180} />
         <View style={{ gap: Spacing.two }}>
           <ThemedText type="title">Who are you going with?</ThemedText>
@@ -26,7 +28,7 @@ export default function OnboardingScreen() {
           </ThemedText>
         </View>
         <CreateOrJoin />
-        <Button title="Sign out" variant="secondary" small onPress={() => supabase.auth.signOut()} />
+        <Button title="Sign out" variant="secondary" small onPress={signOut} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

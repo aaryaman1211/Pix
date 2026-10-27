@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, StyleSheet, TextInput, View } from 'react-native';
 
+import { KEYBOARD_DONE_ID } from '@/components/keyboard-done';
 import { Icon } from '@/components/icon';
 import { PlaceRow } from '@/components/place-row';
 import { ThemedText } from '@/components/themed-text';
@@ -76,6 +77,7 @@ export default function SearchScreen() {
           placeholder="Restaurant, café, anything…"
           placeholderTextColor={c.textMuted}
           keyboardAppearance={c.scheme}
+          inputAccessoryViewID={KEYBOARD_DONE_ID}
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={search}
@@ -99,6 +101,7 @@ export default function SearchScreen() {
         keyExtractor={(p) => p.placeId}
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
         ListHeaderComponent={<ErrorText>{error}</ErrorText>}
         ListEmptyComponent={
           searching ? (

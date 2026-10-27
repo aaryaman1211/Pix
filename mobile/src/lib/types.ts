@@ -42,6 +42,7 @@ export type Memory = {
   notes: string | null;
   place_id: string | null;
   place_name: string | null;
+  cover_photo_id: string | null; // null: use the first photo
   created_by: string;
   created_at: string;
 };

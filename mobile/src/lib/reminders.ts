@@ -7,8 +7,9 @@ import type { ImportantDate } from '@/lib/types';
 
 const KIND = 'important-date';
 const REMIND_HOUR = 9;
-// iOS keeps at most 64 pending local notifications per app.
-const MAX_DATES = 30;
+// iOS keeps at most 64 pending local notifications per app: up to 40 for dates (two each), the
+// rest for throwbacks (lib/throwbacks.ts).
+const MAX_DATES = 20;
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -19,7 +20,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-async function ensurePermission(): Promise<boolean> {
+export async function ensurePermission(): Promise<boolean> {
   if (Platform.OS === 'web') return false;
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
@@ -73,12 +74,12 @@ export async function syncReminders(): Promise<void> {
     const group = d.groups?.name ?? '';
 
     await Notifications.scheduleNotificationAsync({
-      content: { title: d.title, body: `Today · ${group}`, data: { kind: KIND, id: d.id } },
+      content: { title: `${d.title} is today 🎉`, body: `Big day for ${group}. Go make it a good one.`, data: { kind: KIND, id: d.id } },
       trigger: trigger(date, d.repeats_yearly),
     });
     if (dayBefore >= new Date() || d.repeats_yearly) {
       await Notifications.scheduleNotificationAsync({
-        content: { title: `Tomorrow: ${d.title}`, body: group, data: { kind: KIND, id: d.id } },
+        content: { title: `Tomorrow: ${d.title} 👀`, body: `Heads up, ${group}. Don't you dare forget.`, data: { kind: KIND, id: d.id } },
         trigger: trigger(dayBefore, d.repeats_yearly),
       });
     }

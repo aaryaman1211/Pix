@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { PastelView } from '@/components/pastel';
@@ -12,7 +12,9 @@ import { setAppearance, useAppearancePref } from '@/lib/appearance';
 import { useAuth } from '@/lib/auth';
 import { useActiveGroup, useGroups } from '@/lib/groups';
 import { describeArea, findAreas, setLocationPref, useLocation } from '@/lib/location';
+import { groupPushEnabled, setGroupPushEnabled, signOut } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
+import { setThrowbacksEnabled, throwbacksEnabled } from '@/lib/throwbacks';
 
 type Area = { label: string; lat: number; lng: number };
 
@@ -24,6 +26,12 @@ export default function SettingsScreen() {
   const bottomSpace = useTabBarSpace();
   const c = useColors();
   const appearance = useAppearancePref();
+  const [throwbacks, setThrowbacks] = useState(true);
+  const [groupPush, setGroupPush] = useState(true);
+  useEffect(() => {
+    throwbacksEnabled().then(setThrowbacks);
+    groupPushEnabled().then(setGroupPush);
+  }, []);
 
   // Which option is showing; picking "area" only commits once an area is chosen.
   const [mode, setMode] = useState<'device' | 'custom' | null>(null);
@@ -82,7 +90,10 @@ export default function SettingsScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={{ paddingBottom: bottomSpace }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: bottomSpace }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive">
         <TabHeader title="Settings" subtitle="Where Pix looks for places" />
         <View style={styles.body}>
           {/* Location */}
@@ -165,6 +176,45 @@ export default function SettingsScreen() {
 
           <ErrorText>{error}</ErrorText>
 
+          {/* Notifications */}
+          <Card style={{ gap: Spacing.three }}>
+            <ThemedText type="label" themeColor="textSecondary">
+              Notifications
+            </ThemedText>
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <ThemedText style={{ fontWeight: '700' }}>Group activity</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  When someone adds a place, a memory or a date, or finally goes somewhere.
+                </ThemedText>
+              </View>
+              <Switch
+                value={groupPush}
+                trackColor={{ true: c.primary }}
+                onValueChange={(on) => {
+                  setGroupPush(on);
+                  setGroupPushEnabled(on).catch(console.warn);
+                }}
+              />
+            </View>
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <ThemedText style={{ fontWeight: '700' }}>Photo throwbacks</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  A memory every Sunday, a recap on the 1st, and “on this day” each year.
+                </ThemedText>
+              </View>
+              <Switch
+                value={throwbacks}
+                trackColor={{ true: c.primary }}
+                onValueChange={(on) => {
+                  setThrowbacks(on);
+                  setThrowbacksEnabled(on).catch(console.warn);
+                }}
+              />
+            </View>
+          </Card>
+
           {/* Appearance */}
           <Card style={{ gap: Spacing.three }}>
             <ThemedText type="label" themeColor="textSecondary">
@@ -190,7 +240,7 @@ export default function SettingsScreen() {
               Account
             </ThemedText>
             <ThemedText style={{ fontWeight: '600' }}>{session?.user.email}</ThemedText>
-            <Button title="Sign out" variant="secondary" small onPress={() => supabase.auth.signOut()} style={{ alignSelf: 'flex-start' }} />
+            <Button title="Sign out" variant="secondary" small onPress={signOut} style={{ alignSelf: 'flex-start' }} />
           </Card>
         </View>
       </ScrollView>
@@ -200,6 +250,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   body: { paddingHorizontal: Spacing.four, gap: Spacing.three },
   current: {
     flexDirection: 'row',
