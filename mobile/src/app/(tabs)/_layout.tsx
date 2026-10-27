@@ -1,9 +1,17 @@
 import { Tabs } from 'expo-router/js-tabs';
-import { View } from 'react-native';
+import { useIsFocused } from 'expo-router';
+import { Platform, View, type ViewProps } from 'react-native';
 
 import { FloatingBlobs } from '@/components/floating';
 import { PixTabBar } from '@/components/tab-bar';
 import { useColors } from '@/hooks/use-theme';
+
+// On web the inactive tab scenes stay mounted and, being transparent, would draw on top of each
+// other. Hide (not unmount, so state is kept) every scene that isn't the focused tab.
+function WebSceneVisibility({ children }: ViewProps) {
+  const focused = useIsFocused();
+  return <View style={{ flex: 1, display: focused ? 'flex' : 'none' }}>{children}</View>;
+}
 
 export default function TabsLayout() {
   const c = useColors();
@@ -12,6 +20,7 @@ export default function TabsLayout() {
     <View style={{ flex: 1, backgroundColor: c.canvas }}>
       <FloatingBlobs />
       <Tabs
+        screenLayout={Platform.OS === 'web' ? ({ children }) => <WebSceneVisibility>{children}</WebSceneVisibility> : undefined}
         tabBar={(props) => <PixTabBar {...props} />}
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: 'transparent' } }}>
         <Tabs.Screen name="index" options={{ title: 'Places' }} />
