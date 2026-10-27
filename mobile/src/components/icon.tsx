@@ -16,6 +16,7 @@ const ICONS = {
   check: { ios: 'checkmark', android: 'check' },
   heart: { ios: 'heart.fill', android: 'favorite' },
   chevronDown: { ios: 'chevron.down', android: 'expand_more' },
+  chevronLeft: { ios: 'chevron.left', android: 'chevron_left' },
   chevronRight: { ios: 'chevron.right', android: 'chevron_right' },
   sparkle: { ios: 'sparkle', android: 'auto_awesome' },
   star: { ios: 'star.fill', android: 'star' },

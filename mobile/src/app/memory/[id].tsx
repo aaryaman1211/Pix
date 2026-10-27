@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/icon';
@@ -21,7 +21,7 @@ import { must, useQuery } from '@/lib/use-query';
 const COLUMNS = 2;
 const GAP = Spacing.two;
 
-// How the photos are laid out: the usual grid, or a MacBook running Photo Booth. Remembered across memories.
+// How the photos are laid out: the usual grid, or a big photo with a strip of thumbnails (Photo Booth). Remembered across memories.
 type PhotoView = 'grid' | 'booth';
 const VIEW_KEY = 'pix.memoryPhotoView';
 
@@ -38,6 +38,7 @@ export default function MemoryScreen() {
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [view, setView] = useState<PhotoView>('grid');
+  const pager = useRef<FlatList<MemoryPhoto>>(null);
 
   useEffect(() => {
     AsyncStorage.getItem(VIEW_KEY).then((v) => {
@@ -89,6 +90,13 @@ export default function MemoryScreen() {
   const gridPhotos = selecting ? photos : photos.filter((p) => p !== cover);
   // Select mode always uses the grid so photos can be picked.
   const booth = view === 'booth' && !selecting && photos.length > 0;
+
+  // Position of the full-screen photo among all photos, and a jump to another one (arrows).
+  const viewIndex = viewing ? photos.findIndex((p) => p.id === viewing.id) : -1;
+  function goTo(i: number) {
+    pager.current?.scrollToIndex({ index: i, animated: true });
+    setViewing(photos[i]);
+  }
 
   function stopSelecting() {
     setSelecting(false);
@@ -237,7 +245,7 @@ export default function MemoryScreen() {
               onChange={changeView}
               options={[
                 { value: 'grid', label: 'Grid', icon: 'grid' },
-                { value: 'booth', label: 'Photo Booth', icon: 'laptop' },
+                { value: 'booth', label: 'Photo Booth', icon: 'photo' },
               ]}
             />
           </View>
@@ -247,7 +255,7 @@ export default function MemoryScreen() {
           <>
             <PhotoBooth key={memory.id} photos={photos} urls={urls} initialId={cover?.id} onOpen={setViewing} />
             <ThemedText type="small" themeColor="textMuted" style={{ textAlign: 'center' }}>
-              Tap a photo on the strip to put it on screen. Tap the screen to see it full size.
+              Tap a photo on the strip to put it on screen. Tap the photo to see it full size.
             </ThemedText>
           </>
         )}
@@ -335,14 +343,42 @@ export default function MemoryScreen() {
       <Modal visible={!!viewing} animationType="fade" onRequestClose={() => setViewing(null)}>
         <View style={styles.viewer}>
           {viewing && (
-            <Image
-              source={{ uri: urls[viewing.storage_path], cacheKey: viewing.storage_path }}
-              style={StyleSheet.absoluteFill}
-              contentFit="contain"
+            <FlatList
+              ref={pager}
+              data={photos}
+              keyExtractor={(p) => p.id}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              initialScrollIndex={Math.max(0, viewIndex)}
+              getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
+              onMomentumScrollEnd={(e) => {
+                const next = photos[Math.round(e.nativeEvent.contentOffset.x / width)];
+                if (next) setViewing(next);
+              }}
+              renderItem={({ item }) => (
+                <Image
+                  source={{ uri: urls[item.storage_path], cacheKey: item.storage_path }}
+                  style={{ width, height: '100%' }}
+                  contentFit="contain"
+                />
+              )}
             />
           )}
+          {viewing && viewIndex > 0 && (
+            <View style={[styles.navArrow, { left: Spacing.two }]}>
+              <IconCircle icon="chevronLeft" label="Previous photo" color={OnPastel.chip} iconColor={OnPastel.text} onPress={() => goTo(viewIndex - 1)} />
+            </View>
+          )}
+          {viewing && viewIndex < photos.length - 1 && (
+            <View style={[styles.navArrow, { right: Spacing.two }]}>
+              <IconCircle icon="chevronRight" label="Next photo" color={OnPastel.chip} iconColor={OnPastel.text} onPress={() => goTo(viewIndex + 1)} />
+            </View>
+          )}
           <View style={[styles.viewerBar, { top: insets.top + Spacing.two }]}>
-            <View />
+            <ThemedText type="smallBold" style={{ color: '#FFFFFF' }}>
+              {viewIndex + 1} / {photos.length}
+            </ThemedText>
             <IconCircle icon="close" label="Close photo" color={OnPastel.chip} iconColor={OnPastel.text} onPress={() => setViewing(null)} />
           </View>
           {viewing && (
@@ -394,8 +430,9 @@ const styles = StyleSheet.create({
   },
   actionRow: { flexDirection: 'row', gap: Spacing.two },
   viewer: { flex: 1, backgroundColor: '#000' },
+  navArrow: { position: 'absolute', top: '50%', marginTop: -22 },
   viewerBar: { position: 'absolute', left: Spacing.three, right: Spacing.three, flexDirection: 'row', justifyContent: 'space-between' },
   viewerActions: { position: 'absolute', left: Spacing.three, right: Spacing.three, flexDirection: 'row', gap: Spacing.two },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.three },
-  viewRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two },
+  viewRow: { gap: Spacing.two },
 });
