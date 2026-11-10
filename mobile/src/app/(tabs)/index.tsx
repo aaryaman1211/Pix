@@ -7,7 +7,7 @@ import { Icon } from '@/components/icon';
 import { PastelScope } from '@/components/pastel';
 import { InitialBadge, PlaceRow } from '@/components/place-row';
 import { ThemedText } from '@/components/themed-text';
-import { Button, Empty, ErrorText, Fab, TabHeader, useTabBarSpace } from '@/components/ui';
+import { Button, Chip, Empty, ErrorText, Fab, TabHeader, useTabBarSpace } from '@/components/ui';
 import { Pastel, pastelAt, Radius, Spacing } from '@/constants/theme';
 import { useColors } from '@/hooks/use-theme';
 import { distanceLabel } from '@/lib/format';
@@ -75,6 +75,11 @@ export default function PlacesScreen() {
             <View style={styles.tiles}>
               <CountTile count={wantCount} label="to try" color={Pastel.salmon} selected={tab === 'want'} onPress={() => setTab('want')} />
               <CountTile count={beenCount} label="been" color={Pastel.mint} selected={tab === 'visited'} onPress={() => setTab('visited')} />
+            </View>
+            <View style={styles.quickRow}>
+              <Chip label="Polls" icon="check" tone="track" onPress={() => router.push('/polls')} />
+              <Chip label="Surprise me" icon="sparkle" tone="track" onPress={() => router.push('/surprise')} />
+              <Chip label="Split the bill" icon="star" tone="track" onPress={() => router.push('/split')} />
             </View>
             <ErrorText>{places.error ?? error}</ErrorText>
           </View>
@@ -191,6 +196,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   list: { paddingHorizontal: Spacing.four, gap: Spacing.three - 4 },
   tiles: { flexDirection: 'row', gap: Spacing.two },
+  quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   tile: { flex: 1, borderRadius: Radius.tile, paddingHorizontal: Spacing.three + 2, paddingVertical: Spacing.three },
   tileCount: { fontSize: 44, lineHeight: 48, fontWeight: '800', letterSpacing: -1.5 },
   tileLabel: { fontSize: 15, fontWeight: '700' },

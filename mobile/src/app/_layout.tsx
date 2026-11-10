@@ -154,6 +154,12 @@ function RootStack({ fontsReady }: { fontsReady: boolean }) {
           <Stack.Screen name="memory/[id]" options={{ title: '' }} />
           <Stack.Screen name="date/new" options={{ presentation: 'modal', title: 'Important date' }} />
           <Stack.Screen name="groups" options={{ presentation: 'modal', title: 'Your groups' }} />
+          <Stack.Screen name="polls/index" options={{ title: 'Outing polls' }} />
+          <Stack.Screen name="polls/new" options={{ presentation: 'modal', title: 'New poll' }} />
+          <Stack.Screen name="polls/[id]" options={{ title: 'Poll' }} />
+          <Stack.Screen name="surprise" options={{ title: 'Surprise me' }} />
+          <Stack.Screen name="split/index" options={{ title: 'Split the bill' }} />
+          <Stack.Screen name="split/new" options={{ presentation: 'modal', title: 'New expense' }} />
         </Stack.Protected>
       </Stack>
       <KeyboardDoneBar />
