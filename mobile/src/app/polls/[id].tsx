@@ -12,27 +12,29 @@ import { useAuth } from '@/lib/auth';
 import { prettyType, priceLabel } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
 import { useMembers } from '@/lib/members';
-import { leaders, tallyVotes, type Poll, type PollOption, type PollVote } from '@/lib/plan';
+import {
+  castVote,
+  closePollById,
+  deletePollById,
+  leaders,
+  loadPoll,
+  tallyVotes,
+  type PollOption,
+} from '@/lib/plan';
 import { mapsUrl } from '@/lib/places';
-import { supabase } from '@/lib/supabase';
-import { must, useQuery } from '@/lib/use-query';
+import { useQuery } from '@/lib/use-query';
 
 export default function PollScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const group = useActiveGroup();
   const members = useMembers(group.id);
   const { session } = useAuth();
-  const me = session?.user.id;
+  const me = session?.user.id ?? '';
   const c = useColors();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const query = useQuery(async () => {
-    const poll = must<Poll>(await supabase.from('polls').select('*').eq('id', id).single());
-    const options = must<PollOption[]>(await supabase.from('poll_options').select('*').eq('poll_id', id).order('name'));
-    const votes = must<PollVote[]>(await supabase.from('poll_votes').select('*').eq('poll_id', id));
-    return { poll, options, votes };
-  }, [id]);
+  const query = useQuery(() => loadPoll(id), [id]);
 
   if (!query.data) return query.error ? <ErrorText>{query.error}</ErrorText> : <Loading />;
 
@@ -45,15 +47,17 @@ export default function PollScreen() {
   const mostVotes = tally[0]?.votes ?? 0;
 
   async function vote(option: PollOption) {
-    if (!open || busy) return;
+    if (!open || busy || !me) return;
     setBusy(true);
     setError(null);
-    const { error } = await supabase
-      .from('poll_votes')
-      .upsert({ poll_id: poll.id, option_id: option.id, group_id: group.id, user_id: me }, { onConflict: 'poll_id,user_id' });
-    setBusy(false);
-    if (error) return setError(error.message);
-    query.reload();
+    try {
+      await castVote(group.id, poll.id, option.id, me);
+      query.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function closePoll() {
@@ -63,10 +67,14 @@ export default function PollScreen() {
     const pick = top[Math.floor(Math.random() * top.length)].option;
     setBusy(true);
     setError(null);
-    const { error } = await supabase.from('polls').update({ status: 'closed', winner_option_id: pick.id }).eq('id', poll.id);
-    setBusy(false);
-    if (error) return setError(error.message);
-    query.reload();
+    try {
+      await closePollById(poll.id, pick.id);
+      query.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   function confirmClose() {
@@ -85,9 +93,12 @@ export default function PollScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          const { error } = await supabase.from('polls').delete().eq('id', poll.id);
-          if (error) return setError(error.message);
-          router.back();
+          try {
+            await deletePollById(poll.id);
+            router.back();
+          } catch (err) {
+            setError(err instanceof Error ? err.message : String(err));
+          }
         },
       },
     ]);

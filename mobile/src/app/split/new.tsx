@@ -10,8 +10,7 @@ import { useAuth } from '@/lib/auth';
 import { toDay } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
 import { useMembers } from '@/lib/members';
-import { parseRupees, rupees, splitEvenly } from '@/lib/plan';
-import { supabase } from '@/lib/supabase';
+import { createExpense, parseRupees, rupees, splitEvenly } from '@/lib/plan';
 
 const SUGGESTIONS = ['Dinner', 'Coffee', 'Movie', 'Cab', 'Groceries', 'Trip'];
 
@@ -45,27 +44,19 @@ export default function NewExpenseScreen() {
     if (!minor) return;
     setSaving(true);
     setError(null);
-    const { data: expense, error: expenseError } = await supabase
-      .from('expenses')
-      .insert({ group_id: group.id, title: title.trim(), amount_minor: minor, paid_by: payer, spent_on: day })
-      .select('id')
-      .single();
-    if (expenseError || !expense) {
-      setError(expenseError?.message ?? 'Could not save the expense.');
+    try {
+      await createExpense(group.id, me, {
+        title: title.trim(),
+        amount_minor: minor,
+        paid_by: payer,
+        spent_on: day,
+        shares,
+      });
+      router.back();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
       setSaving(false);
-      return;
     }
-    const { error: sharesError } = await supabase
-      .from('expense_shares')
-      .insert(shares.map((s) => ({ expense_id: expense.id, group_id: group.id, ...s })));
-    if (sharesError) {
-      // Do not leave an expense without shares behind; it would throw the balances off.
-      await supabase.from('expenses').delete().eq('id', expense.id);
-      setError(sharesError.message);
-      setSaving(false);
-      return;
-    }
-    router.back();
   }
 
   return (

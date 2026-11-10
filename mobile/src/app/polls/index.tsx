@@ -6,28 +6,14 @@ import { Button, Card, Chip, Empty, ErrorText, Loading } from '@/components/ui';
 import { Pastel, pastelAt, Spacing } from '@/constants/theme';
 import { useActiveGroup } from '@/lib/groups';
 import { useMembers } from '@/lib/members';
-import type { Poll, PollVote } from '@/lib/plan';
-import { supabase } from '@/lib/supabase';
-import { must, useQuery } from '@/lib/use-query';
+import { loadPolls } from '@/lib/plan';
+import { useQuery } from '@/lib/use-query';
 
 export default function PollsScreen() {
   const group = useActiveGroup();
   const members = useMembers(group.id);
 
-  const query = useQuery(async () => {
-    const polls = must<Poll[]>(
-      await supabase.from('polls').select('*').eq('group_id', group.id).order('created_at', { ascending: false }),
-    );
-    const votes = polls.length
-      ? must<PollVote[]>(
-          await supabase
-            .from('poll_votes')
-            .select('*')
-            .in('poll_id', polls.map((p) => p.id)),
-        )
-      : [];
-    return { polls, votes };
-  }, [group.id]);
+  const query = useQuery(() => loadPolls(group.id), [group.id]);
 
   if (!query.data && query.loading) return <Loading />;
 

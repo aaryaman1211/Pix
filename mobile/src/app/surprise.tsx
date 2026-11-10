@@ -19,9 +19,10 @@ const SPIN_MS = 1100;
 const TICK_MS = 90;
 const PRICES: { label: string; max: number | null }[] = [
   { label: 'Any budget', max: null },
-  { label: '₹', max: 1 },
   { label: '₹₹', max: 2 },
   { label: '₹₹₹', max: 3 },
+  { label: '₹₹₹₹', max: 4 },
+  { label: '₹₹₹₹₹', max: 5 },
 ];
 
 // Picks a random place from the group's to-try list. Nothing is saved; it only reads the wishlist.

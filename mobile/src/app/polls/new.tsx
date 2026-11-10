@@ -7,8 +7,10 @@ import { ThemedText } from '@/components/themed-text';
 import { Button, Empty, ErrorText, Input, Loading } from '@/components/ui';
 import { Pastel, Radius, Spacing } from '@/constants/theme';
 import { useColors } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/auth';
 import { prettyType, priceLabel } from '@/lib/format';
 import { useActiveGroup } from '@/lib/groups';
+import { createPoll } from '@/lib/plan';
 import { supabase } from '@/lib/supabase';
 import type { SavedPlace } from '@/lib/types';
 import { must, useQuery } from '@/lib/use-query';
@@ -20,6 +22,8 @@ const MAX_OPTIONS = 6;
 // lets other screens, e.g. "Surprise me", start a poll with places already ticked.
 export default function NewPollScreen() {
   const group = useActiveGroup();
+  const { session } = useAuth();
+  const me = session?.user.id ?? '';
   const c = useColors();
   const { preselect } = useLocalSearchParams<{ preselect?: string }>();
   const [title, setTitle] = useState('Where should we go?');
@@ -44,27 +48,8 @@ export default function NewPollScreen() {
     setError(null);
     try {
       const chosen = (places.data ?? []).filter((p) => picked.includes(p.id));
-      const poll = must<{ id: string }>(
-        await supabase.from('polls').insert({ group_id: group.id, title: title.trim() }).select('id').single(),
-      );
-      must(
-        await supabase.from('poll_options').insert(
-          chosen.map((p) => ({
-            poll_id: poll.id,
-            group_id: group.id,
-            place_id: p.place_id,
-            name: p.name,
-            address: p.address,
-            locality: p.locality,
-            primary_type: p.primary_type,
-            types: p.types,
-            price_level: p.price_level,
-            lat: p.lat,
-            lng: p.lng,
-          })),
-        ),
-      );
-      router.replace({ pathname: '/polls/[id]', params: { id: poll.id } });
+      const pollId = await createPoll(group.id, me, title.trim(), chosen);
+      router.replace({ pathname: '/polls/[id]', params: { id: pollId } });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setSaving(false);

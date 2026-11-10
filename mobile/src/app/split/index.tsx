@@ -11,36 +11,25 @@ import { useActiveGroup } from '@/lib/groups';
 import { useMembers } from '@/lib/members';
 import {
   balances,
+  createSettlement,
+  deleteExpenseById,
+  loadSplit,
   rupees,
   suggestTransfers,
   type Expense,
-  type ExpenseShare,
-  type Settlement,
   type Transfer,
 } from '@/lib/plan';
-import { supabase } from '@/lib/supabase';
-import { must, useQuery } from '@/lib/use-query';
+import { useQuery } from '@/lib/use-query';
 
 export default function SplitScreen() {
   const group = useActiveGroup();
   const members = useMembers(group.id);
   const { session } = useAuth();
-  const me = session?.user.id;
+  const me = session?.user.id ?? '';
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const query = useQuery(async () => {
-    const [expenses, shares, settlements] = await Promise.all([
-      supabase.from('expenses').select('*').eq('group_id', group.id).order('spent_on', { ascending: false }).order('created_at', { ascending: false }),
-      supabase.from('expense_shares').select('*').eq('group_id', group.id),
-      supabase.from('settlements').select('*').eq('group_id', group.id),
-    ]);
-    return {
-      expenses: must<Expense[]>(expenses),
-      shares: must<ExpenseShare[]>(shares),
-      settlements: must<Settlement[]>(settlements),
-    };
-  }, [group.id]);
+  const query = useQuery(() => loadSplit(group.id), [group.id]);
 
   const name = (id: string) => (id === me ? 'You' : (members.find((m) => m.id === id)?.name ?? 'Someone'));
 
@@ -51,12 +40,14 @@ export default function SplitScreen() {
   async function settle(t: Transfer) {
     setBusy(true);
     setError(null);
-    const { error } = await supabase
-      .from('settlements')
-      .insert({ group_id: group.id, from_user: t.from, to_user: t.to, amount_minor: t.amount });
-    setBusy(false);
-    if (error) return setError(error.message);
-    query.reload();
+    try {
+      await createSettlement(group.id, me, { from_user: t.from, to_user: t.to, amount_minor: t.amount });
+      query.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   function confirmSettle(t: Transfer) {
@@ -73,9 +64,12 @@ export default function SplitScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          const { error } = await supabase.from('expenses').delete().eq('id', e.id);
-          if (error) return setError(error.message);
-          query.reload();
+          try {
+            await deleteExpenseById(e.id);
+            query.reload();
+          } catch (err) {
+            setError(err instanceof Error ? err.message : String(err));
+          }
         },
       },
     ]);
