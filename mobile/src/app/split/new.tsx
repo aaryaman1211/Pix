@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
@@ -12,15 +12,16 @@ import { useActiveGroup } from '@/lib/groups';
 import { useMembers } from '@/lib/members';
 import { createExpense, parseRupees, rupees, splitEvenly } from '@/lib/plan';
 
-const SUGGESTIONS = ['Dinner', 'Coffee', 'Movie', 'Cab', 'Groceries', 'Trip'];
+const SUGGESTIONS = ['Breakfast', 'Lunch', 'Dinner', 'Coffee', 'Movie', 'Cab'];
 
 // Add an expense: what, how much, who paid, and who shares it (split evenly).
 export default function NewExpenseScreen() {
+  const { title: initialTitle } = useLocalSearchParams<{ title?: string }>();
   const group = useActiveGroup();
   const members = useMembers(group.id);
   const { session } = useAuth();
   const me = session?.user.id ?? '';
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(initialTitle ?? '');
   const [amount, setAmount] = useState('');
   const [day, setDay] = useState(toDay(new Date()));
   const [payer, setPayer] = useState<string>(me);

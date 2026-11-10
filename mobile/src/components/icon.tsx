@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import type { ColorValue } from 'react-native';
+import { Text, type ColorValue } from 'react-native';
 
 import { useTextColor } from '@/components/themed-text';
 
@@ -31,6 +31,8 @@ const ICONS = {
   grid: { ios: 'square.grid.2x2', android: 'grid_view' },
   camera: { ios: 'camera.fill', android: 'photo_camera' },
   laptop: { ios: 'laptopcomputer', android: 'laptop_mac' },
+  chart: { ios: 'chart.bar.fill', android: 'bar_chart' },
+  shocked: { ios: 'face.smiling', android: 'sentiment_very_dissatisfied' },
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -38,6 +40,14 @@ export type IconName = keyof typeof ICONS;
 // Defaults to the current text colour (dark on pastel cards, theme ink elsewhere).
 export function Icon({ name, size = 20, color }: { name: IconName; size?: number; color?: ColorValue }) {
   const fallback = useTextColor();
+  if (name === 'shocked') {
+    const s = Math.max(size, 14);
+    return (
+      <Text aria-hidden style={{ width: s, height: s, fontSize: s - 1, lineHeight: s, textAlign: 'center' }}>
+        😮
+      </Text>
+    );
+  }
   const { ios, android } = ICONS[name];
   return (
     <SymbolView

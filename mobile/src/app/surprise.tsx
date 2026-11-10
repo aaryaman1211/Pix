@@ -149,7 +149,7 @@ export default function SurpriseScreen() {
 
       <Button
         title={shown ? 'Spin again' : 'Surprise me'}
-        icon="sparkle"
+        icon="shocked"
         onPress={spin}
         loading={spinning}
         disabled={pool.length === 0}

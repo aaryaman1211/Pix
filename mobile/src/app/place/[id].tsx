@@ -145,6 +145,15 @@ export default function PlaceScreen() {
       {place.status === 'want' && (
         <Button title="Mark as been, no memory" variant="secondary" small onPress={markVisited} />
       )}
+      {place.status === 'visited' && (
+        <Button
+          title="Split the bill"
+          icon="star"
+          variant="secondary"
+          small
+          onPress={() => router.push({ pathname: '/split', params: { place: place.name } })}
+        />
+      )}
 
       <Card>
         <ThemedText type="label" themeColor="textSecondary">

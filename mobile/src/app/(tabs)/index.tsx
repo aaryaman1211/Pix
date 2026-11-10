@@ -77,8 +77,8 @@ export default function PlacesScreen() {
               <CountTile count={beenCount} label="been" color={Pastel.mint} selected={tab === 'visited'} onPress={() => setTab('visited')} />
             </View>
             <View style={styles.quickRow}>
-              <Chip label="Polls" icon="check" tone="track" onPress={() => router.push('/polls')} />
-              <Chip label="Surprise me" icon="sparkle" tone="track" onPress={() => router.push('/surprise')} />
+              <Chip label="Polls" icon="chart" tone="track" onPress={() => router.push('/polls')} />
+              <Chip label="Surprise me" icon="shocked" tone="track" onPress={() => router.push('/surprise')} />
               <Chip label="Split the bill" icon="star" tone="track" onPress={() => router.push('/split')} />
             </View>
             <ErrorText>{places.error ?? error}</ErrorText>

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
@@ -22,6 +22,7 @@ import {
 import { useQuery } from '@/lib/use-query';
 
 export default function SplitScreen() {
+  const { place } = useLocalSearchParams<{ place?: string }>();
   const group = useActiveGroup();
   const members = useMembers(group.id);
   const { session } = useAuth();
@@ -83,7 +84,11 @@ export default function SplitScreen() {
       refreshControl={<RefreshControl refreshing={query.loading && !!query.data} onRefresh={query.reload} />}
       ListHeaderComponent={
         <View style={{ gap: Spacing.three }}>
-          <Button title="Add an expense" icon="plus" onPress={() => router.push('/split/new')} />
+          <Button
+            title="Add an expense"
+            icon="plus"
+            onPress={() => router.push(place ? { pathname: '/split/new', params: { title: place } } : '/split/new')}
+          />
 
           <Card color={transfers.length ? Pastel.salmon : Pastel.mint}>
             <ThemedText type="smallBold" themeColor="textSoft">
